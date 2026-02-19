@@ -1,0 +1,9 @@
+server:
+  port: 8080
+
+app:
+  # used by your Flutter app when calling /api/**
+  apiKey: ${API_KEY:CHANGE_ME_API_KEY}
+
+  # used by the Raspberry Pi to connect to /ws/device
+  deviceKey: ${DEVICE_KEY:CHANGE_ME_DEVICE_KEY}
