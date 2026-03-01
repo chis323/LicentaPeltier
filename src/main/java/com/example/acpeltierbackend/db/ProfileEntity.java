@@ -1,0 +1,35 @@
+package com.example.acpeltierbackend.db;
+
+import jakarta.persistence.*;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Entity
+@Table(name = "profiles")
+public class ProfileEntity {
+
+    @Id
+    @Column(name = "id", nullable = false)
+    public UUID id;
+
+    @Column(name = "name", nullable = false)
+    public String name;
+
+    @Column(name = "enabled", nullable = false)
+    public boolean enabled;
+
+    @Column(name = "updated_at", nullable = false)
+    public Instant updatedAt;
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    public List<ProfileRuleEntity> rules = new ArrayList<>();
+
+    @PrePersist
+    @PreUpdate
+    public void touch() {
+        updatedAt = Instant.now();
+    }
+}

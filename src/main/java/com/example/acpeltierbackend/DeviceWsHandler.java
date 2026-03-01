@@ -14,11 +14,13 @@ public class DeviceWsHandler extends TextWebSocketHandler {
 
     private final AppConfig cfg;
     private final DeviceRegistry reg;
+    private final com.example.acpeltierbackend.service.HistoryService history;
     private final ObjectMapper om = new ObjectMapper();
 
-    public DeviceWsHandler(AppConfig cfg, DeviceRegistry reg) {
+    public DeviceWsHandler(AppConfig cfg, DeviceRegistry reg, com.example.acpeltierbackend.service.HistoryService history) {
         this.cfg = cfg;
         this.reg = reg;
+        this.history = history;
     }
 
     @Override
@@ -44,6 +46,11 @@ public class DeviceWsHandler extends TextWebSocketHandler {
             Dtos.TelemetryFrame t = om.treeToValue(root, Dtos.TelemetryFrame.class);
             if (t.ts == null) t.ts = System.currentTimeMillis();
             reg.updateFromTelemetry(t);
+            try {
+                history.recordAmbientSample(t.ambientTempC, t.ts);
+            } catch (Exception e) {
+                System.out.println("[DB] history write failed: " + e.getMessage());
+            }
             return;
         }
 
