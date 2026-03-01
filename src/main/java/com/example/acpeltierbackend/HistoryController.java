@@ -27,8 +27,8 @@ public class HistoryController {
         List<Map<String, Object>> out = rows.stream().map(r -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("day", (r.statDay == null ? null : r.statDay.format(fmt)));
-            m.put("minAmbientTempC", r.minAmbientTempC); // may be null ✅
-            m.put("maxAmbientTempC", r.maxAmbientTempC); // may be null ✅
+            m.put("minAmbientTempC", r.minAmbientTempC);
+            m.put("maxAmbientTempC", r.maxAmbientTempC);
             return m;
         }).toList();
 

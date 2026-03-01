@@ -42,16 +42,15 @@ public class HistoryService {
 
         repo.save(e);
 
-        // Keep only last 7 days
         purgeOlderThan7Days();
     }
 
     @Transactional
     public void purgeOlderThan7Days() {
-        LocalDate cutoff = todayUtc().minusDays(6); // keep today + previous 6 days
+        LocalDate cutoff = todayUtc().minusDays(6);
         repo.findAll().forEach(row -> {
-            if (row.statDay != null && row.statDay.isBefore(cutoff)) { // ✅ changed
-                repo.deleteById(row.statDay);                          // ✅ changed
+            if (row.statDay != null && row.statDay.isBefore(cutoff)) {
+                repo.deleteById(row.statDay);
             }
         });
     }
@@ -68,7 +67,7 @@ public class HistoryService {
 
             DailyAmbientStatsEntity row = repo.findById(d).orElseGet(() -> {
                 DailyAmbientStatsEntity empty = new DailyAmbientStatsEntity();
-                empty.statDay = d;            // ✅ changed
+                empty.statDay = d;
                 empty.minAmbientTempC = null;
                 empty.maxAmbientTempC = null;
                 return empty;

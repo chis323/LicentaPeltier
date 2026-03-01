@@ -31,7 +31,7 @@ public class ProfileService {
 
     @Transactional
     public ProfileDtos.Profile create(String name) {
-        // Enforce MAX 3 profiles
+
         long count = repo.count();
         if (count >= MAX_PROFILES) {
             throw new IllegalStateException("Maximum " + MAX_PROFILES + " profiles allowed");
@@ -51,7 +51,6 @@ public class ProfileService {
         ProfileEntity p = repo.findById(parseUuid(id))
                 .orElseThrow(() -> new NoSuchElementException("Profile not found"));
 
-        // ensure rules loaded (if LAZY)
         p.rules.size();
         return toDto(p);
     }
@@ -61,15 +60,11 @@ public class ProfileService {
         ProfileEntity p = repo.findById(parseUuid(id))
                 .orElseThrow(() -> new NoSuchElementException("Profile not found"));
 
-        // Update name (only if non-blank)
         if (incoming.name() != null && !incoming.name().isBlank()) {
             p.name = incoming.name().trim();
         }
 
-        // enabled flag is allowed here too (but you typically enable via /enable endpoint)
         p.enabled = incoming.enabled();
-
-        // Replace all rules (orphanRemoval=true)
         p.rules.clear();
 
         if (incoming.rules() != null) {
@@ -95,7 +90,6 @@ public class ProfileService {
     public void delete(String id) {
         UUID pid = parseUuid(id);
 
-        // Disable first (cleaner)
         repo.findById(pid).ifPresent(p -> {
             if (p.enabled) {
                 p.enabled = false;
@@ -103,14 +97,8 @@ public class ProfileService {
             }
         });
 
-        // orphanRemoval=true should remove rules automatically
         repo.deleteById(pid);
     }
-
-    /**
-     * Enforces ONE enabled profile: enabling one disables all others.
-     * Also avoids excessive saves by only saving when state changes.
-     */
     @Transactional
     public void setEnabled(String id, boolean enabled) {
         UUID pid = parseUuid(id);
@@ -124,7 +112,6 @@ public class ProfileService {
             return;
         }
 
-        // enable requested one; disable others
         List<ProfileEntity> all = repo.findAll();
         boolean found = false;
 
@@ -148,11 +135,9 @@ public class ProfileService {
     public Optional<ProfileEntity> getEnabledProfileEntity() {
         List<ProfileEntity> enabled = repo.findByEnabledTrue();
         if (enabled.isEmpty()) return Optional.empty();
-        // if multiple enabled (shouldn't happen), pick the first
         return Optional.of(enabled.get(0));
     }
 
-    // ===== helpers =====
 
     private static UUID parseUuid(String s) {
         try {

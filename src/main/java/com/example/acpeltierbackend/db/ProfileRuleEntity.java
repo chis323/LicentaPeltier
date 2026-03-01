@@ -18,7 +18,7 @@ public class ProfileRuleEntity {
     public ProfileEntity profile;
 
     @Column(name = "day_of_week", nullable = false)
-    public int dayOfWeek; // 1=Mon..7=Sun
+    public int dayOfWeek;
 
     @Column(name = "start_time", nullable = false)
     public LocalTime startTime;

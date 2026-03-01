@@ -16,26 +16,24 @@ public class ProfileScheduler {
     private final ProfileService profileService;
     private final CommandSender sender;
 
-    // Cache last sent command to avoid spamming
+
     private Dtos.CommandRequest lastApplied = null;
 
-    // Use local timezone for schedule matching (recommended)
+
     private final ZoneId zone = ZoneId.systemDefault();
-    // If you want to force a zone, use e.g.:
-    // private final ZoneId zone = ZoneId.of("Europe/Bucharest");
 
     public ProfileScheduler(ProfileService profileService, CommandSender sender) {
         this.profileService = profileService;
         this.sender = sender;
     }
 
-    // For testing use 5s; once OK, switch back to 30_000
+
     @Scheduled(fixedDelay = 5_000)
     public void tick() {
         try {
             Optional<ProfileEntity> enabledOpt = profileService.getEnabledProfileEntity();
             if (enabledOpt.isEmpty()) {
-                // No enabled profile: optionally send idle once
+
                 applyIdleIfNeeded("no enabled profile");
                 return;
             }
@@ -43,14 +41,12 @@ public class ProfileScheduler {
             ProfileEntity p = enabledOpt.get();
 
             ZonedDateTime now = ZonedDateTime.now(zone);
-            int dow = now.getDayOfWeek().getValue(); // 1=Mon..7=Sun
+            int dow = now.getDayOfWeek().getValue();
             LocalTime t = now.toLocalTime().withSecond(0).withNano(0);
 
             ProfileRuleEntity match = p.rules.stream()
                     .filter(r -> r.dayOfWeek == dow)
                     .filter(r -> inRange(t, r.startTime, r.endTime))
-                    // pick the most specific match if overlaps exist:
-                    // latest start time that still contains "now"
                     .sorted(Comparator.comparing((ProfileRuleEntity r) -> r.startTime).reversed())
                     .findFirst()
                     .orElse(null);
@@ -67,7 +63,6 @@ public class ProfileScheduler {
             cmd.swingOn = match.swingOn;
 
             if (same(cmd, lastApplied)) {
-                // System.out.println("[SCHED] same as last, skip");
                 return;
             }
 
@@ -92,18 +87,13 @@ public class ProfileScheduler {
             }
 
         } catch (Exception e) {
-            // Never let the scheduler die silently
+
             System.out.println("[SCHED] ERROR: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void applyIdleIfNeeded(String reason) {
-        // OPTIONAL BEHAVIOR:
-        // If you want the device to "stop" when outside any block,
-        // send a neutral command once.
-        //
-        // If you *don't* want this, delete this method and just return.
 
         Dtos.CommandRequest idle = new Dtos.CommandRequest();
         idle.coldFanPwm = 0;
@@ -123,13 +113,13 @@ public class ProfileScheduler {
     }
 
     private static boolean inRange(LocalTime now, LocalTime start, LocalTime end) {
-        // supports ranges that cross midnight, e.g. 22:00-02:00
+
         if (start.equals(end)) return true;
 
         if (start.isBefore(end)) {
             return !now.isBefore(start) && now.isBefore(end);
         }
-        // wraps midnight
+
         return !now.isBefore(start) || now.isBefore(end);
     }
 
