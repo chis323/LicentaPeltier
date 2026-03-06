@@ -1,4 +1,4 @@
-package com.example.acpeltierbackend.db;
+package com.example.acpeltierbackend.entity;
 
 import jakarta.persistence.*;
 

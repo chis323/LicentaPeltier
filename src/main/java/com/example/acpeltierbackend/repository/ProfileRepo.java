@@ -1,5 +1,6 @@
-package com.example.acpeltierbackend.db;
+package com.example.acpeltierbackend.repository;
 
+import com.example.acpeltierbackend.entity.ProfileEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

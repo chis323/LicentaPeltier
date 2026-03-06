@@ -1,4 +1,4 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;

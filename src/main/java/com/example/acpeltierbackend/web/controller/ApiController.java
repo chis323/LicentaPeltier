@@ -1,5 +1,7 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.web.controller;
 
+import com.example.acpeltierbackend.security.DeviceRegistry;
+import com.example.acpeltierbackend.web.dto.Dtos;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

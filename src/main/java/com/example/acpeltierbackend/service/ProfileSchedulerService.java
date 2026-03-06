@@ -1,8 +1,8 @@
 package com.example.acpeltierbackend.service;
 
-import com.example.acpeltierbackend.Dtos;
-import com.example.acpeltierbackend.db.ProfileEntity;
-import com.example.acpeltierbackend.db.ProfileRuleEntity;
+import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.entity.ProfileEntity;
+import com.example.acpeltierbackend.entity.ProfileRuleEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -11,10 +11,10 @@ import java.util.Comparator;
 import java.util.Optional;
 
 @Component
-public class ProfileScheduler {
+public class ProfileSchedulerService {
 
     private final ProfileService profileService;
-    private final CommandSender sender;
+    private final CommandSenderService sender;
 
 
     private Dtos.CommandRequest lastApplied = null;
@@ -22,7 +22,7 @@ public class ProfileScheduler {
 
     private final ZoneId zone = ZoneId.systemDefault();
 
-    public ProfileScheduler(ProfileService profileService, CommandSender sender) {
+    public ProfileSchedulerService(ProfileService profileService, CommandSenderService sender) {
         this.profileService = profileService;
         this.sender = sender;
     }

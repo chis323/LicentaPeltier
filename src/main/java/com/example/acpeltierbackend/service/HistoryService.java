@@ -1,7 +1,7 @@
 package com.example.acpeltierbackend.service;
 
-import com.example.acpeltierbackend.db.DailyAmbientStatRepo;
-import com.example.acpeltierbackend.db.DailyAmbientStatsEntity;
+import com.example.acpeltierbackend.repository.DailyAmbientStatRepo;
+import com.example.acpeltierbackend.entity.DailyAmbientStatsEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

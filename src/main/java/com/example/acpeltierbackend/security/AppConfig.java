@@ -1,4 +1,4 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

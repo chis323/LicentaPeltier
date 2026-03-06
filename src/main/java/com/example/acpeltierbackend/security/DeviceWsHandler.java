@@ -1,5 +1,6 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.security;
 
+import com.example.acpeltierbackend.web.dto.Dtos;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;

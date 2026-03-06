@@ -1,9 +1,9 @@
 package com.example.acpeltierbackend.service;
 
-import com.example.acpeltierbackend.ProfileDtos;
-import com.example.acpeltierbackend.db.ProfileEntity;
-import com.example.acpeltierbackend.db.ProfileRepo;
-import com.example.acpeltierbackend.db.ProfileRuleEntity;
+import com.example.acpeltierbackend.web.dto.ProfileDtos;
+import com.example.acpeltierbackend.entity.ProfileEntity;
+import com.example.acpeltierbackend.repository.ProfileRepo;
+import com.example.acpeltierbackend.entity.ProfileRuleEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

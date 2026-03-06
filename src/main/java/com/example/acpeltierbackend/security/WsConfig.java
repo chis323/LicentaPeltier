@@ -1,4 +1,4 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.security;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.*;

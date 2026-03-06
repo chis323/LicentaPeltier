@@ -1,4 +1,4 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.web.controller;
 
 import com.example.acpeltierbackend.service.HistoryService;
 import org.springframework.web.bind.annotation.GetMapping;

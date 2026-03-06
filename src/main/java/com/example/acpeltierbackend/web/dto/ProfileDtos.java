@@ -1,4 +1,4 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.web.dto;
 
 import java.util.List;
 

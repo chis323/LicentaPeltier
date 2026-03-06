@@ -1,5 +1,6 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.web.controller;
 
+import com.example.acpeltierbackend.web.dto.ProfileDtos;
 import com.example.acpeltierbackend.service.ProfileService;
 import org.springframework.web.bind.annotation.*;
 

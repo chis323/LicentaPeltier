@@ -1,17 +1,17 @@
 package com.example.acpeltierbackend.service;
 
-import com.example.acpeltierbackend.DeviceRegistry;
+import com.example.acpeltierbackend.security.DeviceRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 
 @Service
-public class CommandSender {
+public class CommandSenderService {
 
     private final DeviceRegistry reg;
     private final ObjectMapper om = new ObjectMapper();
 
-    public CommandSender(DeviceRegistry reg) {
+    public CommandSenderService(DeviceRegistry reg) {
         this.reg = reg;
     }
 

@@ -1,4 +1,5 @@
-package com.example.acpeltierbackend;
+package com.example.acpeltierbackend.security;
+import com.example.acpeltierbackend.web.dto.Dtos;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 
