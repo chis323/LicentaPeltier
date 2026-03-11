@@ -31,7 +31,7 @@ public class HistoryService {
 
         DailyAmbientStatsEntity e = repo.findById(day).orElseGet(() -> {
             DailyAmbientStatsEntity n = new DailyAmbientStatsEntity();
-            n.statDay = day;
+            n.statusDay = day;
             n.minAmbientTempC = ambientTempC;
             n.maxAmbientTempC = ambientTempC;
             return n;
@@ -49,8 +49,8 @@ public class HistoryService {
     public void purgeOlderThan7Days() {
         LocalDate cutoff = todayUtc().minusDays(6);
         repo.findAll().forEach(row -> {
-            if (row.statDay != null && row.statDay.isBefore(cutoff)) {
-                repo.deleteById(row.statDay);
+            if (row.statusDay != null && row.statusDay.isBefore(cutoff)) {
+                repo.deleteById(row.statusDay);
             }
         });
     }
@@ -67,7 +67,7 @@ public class HistoryService {
 
             DailyAmbientStatsEntity row = repo.findById(d).orElseGet(() -> {
                 DailyAmbientStatsEntity empty = new DailyAmbientStatsEntity();
-                empty.statDay = d;
+                empty.statusDay = d;
                 empty.minAmbientTempC = null;
                 empty.maxAmbientTempC = null;
                 return empty;

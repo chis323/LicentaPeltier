@@ -12,12 +12,12 @@ public class DailyAmbientStatsEntity {
 
     @Id
     @Column(name = "stat_day", nullable = false)
-    public LocalDate statDay;
+    public LocalDate statusDay;
 
-    @Column(name = "min_ambient_temp_c")
+    @Column(name = "min_ambient_temp")
     public Double minAmbientTempC;
 
-    @Column(name = "max_ambient_temp_c")
+    @Column(name = "max_ambient_temp")
     public Double maxAmbientTempC;
 
     @Column(name = "updated_at", nullable = false)

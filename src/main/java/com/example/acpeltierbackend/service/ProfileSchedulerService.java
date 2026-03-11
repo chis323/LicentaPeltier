@@ -4,13 +4,13 @@ import com.example.acpeltierbackend.web.dto.Dtos;
 import com.example.acpeltierbackend.entity.ProfileEntity;
 import com.example.acpeltierbackend.entity.ProfileRuleEntity;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.Comparator;
 import java.util.Optional;
 
-@Component
+@Service
 public class ProfileSchedulerService {
 
     private final ProfileService profileService;
@@ -46,9 +46,7 @@ public class ProfileSchedulerService {
 
             ProfileRuleEntity match = p.rules.stream()
                     .filter(r -> r.dayOfWeek == dow)
-                    .filter(r -> inRange(t, r.startTime, r.endTime))
-                    .sorted(Comparator.comparing((ProfileRuleEntity r) -> r.startTime).reversed())
-                    .findFirst()
+                    .filter(r -> inRange(t, r.startTime, r.endTime)).max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime))
                     .orElse(null);
 
             if (match == null) {
@@ -78,7 +76,7 @@ public class ProfileSchedulerService {
                         cmd.coldFanPwm,
                         cmd.hotFanPwm,
                         cmd.peltierPwm,
-                        String.valueOf(cmd.swingOn),
+                        cmd.swingOn,
                         zone,
                         now
                 );
