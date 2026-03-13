@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 void main() => runApp(const MyApp());
 
-const String baseUrl = "http://192.168.1.121:8080";
+const String baseUrl = "http://10.86.167.131:8080";
 const String apiKey = "CHANGE_ME_API_KEY";
 
 class Api {
