@@ -16,24 +16,21 @@ public class ProfileSchedulerService {
     private final ProfileService profileService;
     private final CommandSenderService sender;
 
-
     private Dtos.CommandRequest lastApplied = null;
 
-
-    private final ZoneId zone = ZoneId.systemDefault();
+    // FIX: do not use ZoneId.systemDefault() on Render
+    private final ZoneId zone = ZoneId.of("Europe/Bucharest");
 
     public ProfileSchedulerService(ProfileService profileService, CommandSenderService sender) {
         this.profileService = profileService;
         this.sender = sender;
     }
 
-
     @Scheduled(fixedDelay = 5_000)
     public void tick() {
         try {
             Optional<ProfileEntity> enabledOpt = profileService.getEnabledProfileEntity();
             if (enabledOpt.isEmpty()) {
-
                 applyIdleIfNeeded("no enabled profile");
                 return;
             }
@@ -45,8 +42,8 @@ public class ProfileSchedulerService {
             LocalTime t = now.toLocalTime().withSecond(0).withNano(0);
 
             ProfileRuleEntity match = p.rules.stream()
-                    .filter(r -> r.dayOfWeek == dow)
-                    .filter(r -> inRange(t, r.startTime, r.endTime)).max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime))
+                    .filter(r -> matchesRule(now, r))
+                    .max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime))
                     .orElse(null);
 
             if (match == null) {
@@ -85,14 +82,12 @@ public class ProfileSchedulerService {
             }
 
         } catch (Exception e) {
-
             System.out.println("[SCHED] ERROR: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void applyIdleIfNeeded(String reason) {
-
         Dtos.CommandRequest idle = new Dtos.CommandRequest();
         idle.coldFanPwm = 0;
         idle.hotFanPwm = 0;
@@ -110,15 +105,33 @@ public class ProfileSchedulerService {
         }
     }
 
-    private static boolean inRange(LocalTime now, LocalTime start, LocalTime end) {
+    private static boolean matchesRule(ZonedDateTime now, ProfileRuleEntity r) {
+        int dow = now.getDayOfWeek().getValue();
+        LocalTime t = now.toLocalTime().withSecond(0).withNano(0);
 
-        if (start.equals(end)) return true;
-
-        if (start.isBefore(end)) {
-            return !now.isBefore(start) && now.isBefore(end);
+        // normal range, example 08:00 -> 12:00
+        if (r.startTime.isBefore(r.endTime)) {
+            return r.dayOfWeek == dow &&
+                    !t.isBefore(r.startTime) &&
+                    t.isBefore(r.endTime);
         }
 
-        return !now.isBefore(start) || now.isBefore(end);
+        // overnight range, example 22:00 -> 02:00
+        if (r.startTime.isAfter(r.endTime)) {
+            if (!t.isBefore(r.startTime)) {
+                // same day, late evening
+                return r.dayOfWeek == dow;
+            }
+
+            if (t.isBefore(r.endTime)) {
+                // after midnight, belongs to previous day’s rule
+                int previousDow = dow == 1 ? 7 : dow - 1;
+                return r.dayOfWeek == previousDow;
+            }
+        }
+
+        // same start and end => active all day
+        return r.startTime.equals(r.endTime) && r.dayOfWeek == dow;
     }
 
     private static boolean same(Dtos.CommandRequest a, Dtos.CommandRequest b) {
