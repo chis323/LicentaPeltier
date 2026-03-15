@@ -38,7 +38,7 @@ public class DeviceRegistry {
 
         s.coldFanPwm = t.coldFanPwm;
         s.hotFanPwm = t.hotFanPwm;
-        s.peltierPwm = t.peltierPwm;
+        s.peltierOn = t.peltierOn;
 
         s.swingOn = t.swingOn;
         s.fault = t.fault;

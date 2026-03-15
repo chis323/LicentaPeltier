@@ -14,8 +14,7 @@ public class Dtos {
         @Min(0) @Max(100)
         public Integer hotFanPwm;
 
-        @Min(0) @Max(100)
-        public Integer peltierPwm;
+        public Boolean peltierOn;
     }
 
     public static class StatusResponse {
@@ -31,7 +30,7 @@ public class Dtos {
 
         public Integer coldFanPwm;
         public Integer hotFanPwm;
-        public Integer peltierPwm;
+        public Boolean peltierOn;
 
         public Boolean swingOn;
         public String fault;
@@ -49,7 +48,7 @@ public class Dtos {
 
         public Integer coldFanPwm;
         public Integer hotFanPwm;
-        public Integer peltierPwm;
+        public Boolean peltierOn;
 
         public Boolean swingOn;
         public String fault;

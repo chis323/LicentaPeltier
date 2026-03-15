@@ -18,7 +18,6 @@ public class ProfileSchedulerService {
 
     private Dtos.CommandRequest lastApplied = null;
 
-    // FIX: do not use ZoneId.systemDefault() on Render
     private final ZoneId zone = ZoneId.of("Europe/Bucharest");
 
     public ProfileSchedulerService(ProfileService profileService, CommandSenderService sender) {
@@ -38,8 +37,6 @@ public class ProfileSchedulerService {
             ProfileEntity p = enabledOpt.get();
 
             ZonedDateTime now = ZonedDateTime.now(zone);
-            int dow = now.getDayOfWeek().getValue();
-            LocalTime t = now.toLocalTime().withSecond(0).withNano(0);
 
             ProfileRuleEntity match = p.rules.stream()
                     .filter(r -> matchesRule(now, r))
@@ -54,7 +51,7 @@ public class ProfileSchedulerService {
             Dtos.CommandRequest cmd = new Dtos.CommandRequest();
             cmd.coldFanPwm = match.coldFanPwm;
             cmd.hotFanPwm = match.hotFanPwm;
-            cmd.peltierPwm = match.peltierOn ? 100 : 0;
+            cmd.peltierOn = match.peltierOn;
             cmd.swingOn = match.swingOn;
 
             if (same(cmd, lastApplied)) {
@@ -65,14 +62,14 @@ public class ProfileSchedulerService {
             if (ok) {
                 lastApplied = cmd;
                 System.out.printf(
-                        "[SCHED] applied profile '%s' block: DOW=%d %s-%s -> cold=%d hot=%d peltier=%d swing=%s (zone=%s now=%s)%n",
+                        "[SCHED] applied profile '%s' block: DOW=%d %s-%s -> cold=%d hot=%d peltier=%s swing=%s (zone=%s now=%s)%n",
                         p.name,
                         match.dayOfWeek,
                         match.startTime,
                         match.endTime,
                         cmd.coldFanPwm,
                         cmd.hotFanPwm,
-                        cmd.peltierPwm,
+                        cmd.peltierOn,
                         cmd.swingOn,
                         zone,
                         now
@@ -91,7 +88,7 @@ public class ProfileSchedulerService {
         Dtos.CommandRequest idle = new Dtos.CommandRequest();
         idle.coldFanPwm = 0;
         idle.hotFanPwm = 0;
-        idle.peltierPwm = 0;
+        idle.peltierOn = false;
         idle.swingOn = false;
 
         if (same(idle, lastApplied)) return;
@@ -109,28 +106,23 @@ public class ProfileSchedulerService {
         int dow = now.getDayOfWeek().getValue();
         LocalTime t = now.toLocalTime().withSecond(0).withNano(0);
 
-        // normal range, example 08:00 -> 12:00
         if (r.startTime.isBefore(r.endTime)) {
             return r.dayOfWeek == dow &&
                     !t.isBefore(r.startTime) &&
                     t.isBefore(r.endTime);
         }
 
-        // overnight range, example 22:00 -> 02:00
         if (r.startTime.isAfter(r.endTime)) {
             if (!t.isBefore(r.startTime)) {
-                // same day, late evening
                 return r.dayOfWeek == dow;
             }
 
             if (t.isBefore(r.endTime)) {
-                // after midnight, belongs to previous day’s rule
                 int previousDow = dow == 1 ? 7 : dow - 1;
                 return r.dayOfWeek == previousDow;
             }
         }
 
-        // same start and end => active all day
         return r.startTime.equals(r.endTime) && r.dayOfWeek == dow;
     }
 
@@ -139,7 +131,7 @@ public class ProfileSchedulerService {
         if (a == null || b == null) return false;
         return eq(a.coldFanPwm, b.coldFanPwm)
                 && eq(a.hotFanPwm, b.hotFanPwm)
-                && eq(a.peltierPwm, b.peltierPwm)
+                && eq(a.peltierOn, b.peltierOn)
                 && eq(a.swingOn, b.swingOn);
     }
 
