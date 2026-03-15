@@ -17,7 +17,10 @@ class Api {
     );
   }
 
-  static Future<Map<String, dynamic>> _getJson(String path, [Map<String, String>? query]) async {
+  static Future<Map<String, dynamic>> _getJson(
+    String path, [
+    Map<String, String>? query,
+  ]) async {
     final res = await http.get(_uri(path, query));
     if (res.statusCode != 200) {
       throw Exception("GET $path failed: ${res.statusCode} ${res.body}");
@@ -71,13 +74,17 @@ class Api {
   static Future<List<DailyStat>> getDailyHistory({int days = 7}) async {
     final obj = await _getJson("/api/history/daily", {"days": "$days"});
     final list = (obj["days"] as List<dynamic>? ?? []);
-    return list.map((e) => DailyStat.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => DailyStat.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   static Future<List<ProfileSummary>> listProfiles() async {
     final obj = await _getJson("/api/profiles");
     final list = (obj["profiles"] as List<dynamic>? ?? []);
-    return list.map((e) => ProfileSummary.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => ProfileSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   static Future<Profile> getProfile(String id) async {
@@ -249,10 +256,63 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const bg = Color(0xFF121212);
+    const card = Color(0xFF1E1E1E);
+
+    final darkScheme = ColorScheme.fromSeed(
+      seedColor: Colors.blueGrey,
+      brightness: Brightness.dark,
+    );
+
     return MaterialApp(
       title: 'Peltier AC Remote',
-      theme: ThemeData(useMaterial3: true),
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: darkScheme,
+        scaffoldBackgroundColor: bg,
+        cardColor: card,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: bg,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        cardTheme: const CardThemeData(color: card),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white),
+          titleLarge: TextStyle(color: Colors.white),
+          titleMedium: TextStyle(color: Colors.white),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: card,
+          labelStyle: const TextStyle(color: Colors.white70),
+          hintStyle: const TextStyle(color: Colors.white54),
+          enabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.white24),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.white70),
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        chipTheme: const ChipThemeData(
+          backgroundColor: card,
+          labelStyle: TextStyle(color: Colors.white),
+        ),
+        snackBarTheme: const SnackBarThemeData(
+          backgroundColor: Color(0xFF2A2A2A),
+          contentTextStyle: TextStyle(color: Colors.white),
+        ),
+        dialogTheme: const DialogThemeData(
+          backgroundColor: card,
+          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
+          contentTextStyle: TextStyle(color: Colors.white70, fontSize: 16),
+        ),
+      ),
       home: const HomePage(),
     );
   }
@@ -373,7 +433,9 @@ class _HomePageState extends State<HomePage> {
     if (mounted) setState(() => historyLoading = true);
 
     try {
-      final h = await Api.getDailyHistory(days: 7)..sort((a, b) => a.day.compareTo(b.day));
+      final h = await Api.getDailyHistory(days: 7)
+        ..sort((a, b) => a.day.compareTo(b.day));
+
       if (!mounted) return;
 
       setState(() {
@@ -449,6 +511,7 @@ class _HomePageState extends State<HomePage> {
       final summaries = await Api.listProfiles();
 
       if (!mounted) return;
+
       setState(() {
         selectedProfile = saved;
         selectedProfileId = saved.id;
@@ -475,7 +538,10 @@ class _HomePageState extends State<HomePage> {
         title: const Text("Error"),
         content: Text(msg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("OK"),
+          ),
         ],
       ),
     );
@@ -566,8 +632,14 @@ class _HomePageState extends State<HomePage> {
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
-          FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text("Create")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text("Create"),
+          ),
         ],
       ),
     );
@@ -588,11 +660,6 @@ class _HomePageState extends State<HomePage> {
 
       setProfileNameField(full.name);
       await loadProfilesAndSelect();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profile created ✅")),
-      );
     } catch (e) {
       showErrorDialog(e);
     } finally {
@@ -622,8 +689,14 @@ class _HomePageState extends State<HomePage> {
         title: const Text("Delete profile?"),
         content: Text('Delete "${p.name}"? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Delete")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Delete"),
+          ),
         ],
       ),
     );
@@ -678,7 +751,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> editBlock(Profile p, Rule r) async {
-    final updated = await showRuleEditorDialog(title: "Edit time block", initial: r);
+    final updated = await showRuleEditorDialog(
+      title: "Edit time block",
+      initial: r,
+    );
     if (updated == null) return;
 
     setState(() {
@@ -775,7 +851,10 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel"),
+            ),
             FilledButton(
               onPressed: () {
                 final e1 = validateTime(startCtrl.text.trim());
@@ -803,7 +882,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  static Widget localSlider(String title, double value, ValueChanged<double> onChanged) {
+  static Widget localSlider(
+    String title,
+    double value,
+    ValueChanged<double> onChanged,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -834,17 +917,17 @@ class _HomePageState extends State<HomePage> {
   Widget chip(String label, String value) => Chip(label: Text("$label: $value"));
 
   Widget errorCard(String msg) => Card(
-        color: Colors.red.shade50,
+        color: const Color(0xFF3A1F1F),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Text(msg, style: TextStyle(color: Colors.red.shade800)),
+          child: Text(msg, style: const TextStyle(color: Colors.white)),
         ),
       );
 
   Widget sliderRow({
     required String title,
     required double value,
-    required ValueChanged<double> onChanged,
+    required ValueChanged<double>? onChanged,
     required ValueChanged<double>? onChangeEnd,
   }) {
     return Column(
@@ -861,7 +944,7 @@ class _HomePageState extends State<HomePage> {
           max: 100,
           divisions: 100,
           value: value.clamp(0, 100),
-          onChanged: device.deviceOnline ? onChanged : null,
+          onChanged: onChanged,
           onChangeEnd: onChangeEnd,
         ),
       ],
@@ -880,7 +963,10 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   width: 12,
                   height: 12,
-                  decoration: BoxDecoration(color: onlineColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: onlineColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -890,7 +976,7 @@ class _HomePageState extends State<HomePage> {
                 const Spacer(),
                 Text(
                   device.ts == null ? "" : formatTs(device.ts!),
-                  style: TextStyle(color: Colors.grey.shade700),
+                  style: const TextStyle(color: Colors.white70),
                 ),
               ],
             ),
@@ -901,11 +987,15 @@ class _HomePageState extends State<HomePage> {
               children: [
                 chip(
                   "Ambient",
-                  device.ambientTempC == null ? "--" : "${device.ambientTempC!.toStringAsFixed(1)} °C",
+                  device.ambientTempC == null
+                      ? "--"
+                      : "${device.ambientTempC!.toStringAsFixed(1)} °C",
                 ),
                 chip(
                   "Humidity",
-                  device.humidityPct == null ? "--" : "${device.humidityPct!.toStringAsFixed(0)} %",
+                  device.humidityPct == null
+                      ? "--"
+                      : "${device.humidityPct!.toStringAsFixed(0)} %",
                 ),
               ],
             ),
@@ -946,10 +1036,10 @@ class _HomePageState extends State<HomePage> {
             SizedBox(
               height: 240,
               child: history.isEmpty
-                  ? Center(
+                  ? const Center(
                       child: Text(
-                        historyLoading ? "Loading..." : "No data yet",
-                        style: TextStyle(color: Colors.grey.shade700),
+                        "No data yet",
+                        style: TextStyle(color: Colors.white70),
                       ),
                     )
                   : minMaxChart(history),
@@ -1011,7 +1101,7 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.only(right: 6),
                 child: Text(
                   v.toStringAsFixed(1),
-                  style: const TextStyle(fontSize: 11),
+                  style: const TextStyle(fontSize: 11, color: Colors.white),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -1028,7 +1118,10 @@ class _HomePageState extends State<HomePage> {
                 final dt = data[i].day;
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text("${dt.month}/${dt.day}", style: const TextStyle(fontSize: 11)),
+                  child: Text(
+                    "${dt.month}/${dt.day}",
+                    style: const TextStyle(fontSize: 11, color: Colors.white),
+                  ),
                 );
               },
             ),
@@ -1036,8 +1129,16 @@ class _HomePageState extends State<HomePage> {
         ),
         lineTouchData: const LineTouchData(enabled: true),
         lineBarsData: [
-          LineChartBarData(spots: minSpots, isCurved: true, dotData: const FlDotData(show: true)),
-          LineChartBarData(spots: maxSpots, isCurved: true, dotData: const FlDotData(show: true)),
+          LineChartBarData(
+            spots: minSpots,
+            isCurved: true,
+            dotData: const FlDotData(show: true),
+          ),
+          LineChartBarData(
+            spots: maxSpots,
+            isCurved: true,
+            dotData: const FlDotData(show: true),
+          ),
         ],
       ),
     );
@@ -1055,7 +1156,10 @@ class _HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                const Text("Profiles & Schedule", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Text(
+                  "Profiles & Schedule",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
                 const Spacer(),
                 if (profilesLoading)
                   const SizedBox(
@@ -1104,11 +1208,17 @@ class _HomePageState extends State<HomePage> {
             ),
             if (maxReached) ...[
               const SizedBox(height: 8),
-              Text("Max 3 profiles. Delete one to create another.", style: TextStyle(color: Colors.grey.shade700)),
+              const Text(
+                "Max 3 profiles. Delete one to create another.",
+                style: TextStyle(color: Colors.white70),
+              ),
             ],
             if (p == null) ...[
               const SizedBox(height: 10),
-              Text("Create a profile to add schedules.", style: TextStyle(color: Colors.grey.shade700)),
+              const Text(
+                "Create a profile to add schedules.",
+                style: TextStyle(color: Colors.white70),
+              ),
             ] else ...[
               const SizedBox(height: 12),
               TextField(
@@ -1118,7 +1228,11 @@ class _HomePageState extends State<HomePage> {
                   suffixIcon: autosaving
                       ? const Padding(
                           padding: EdgeInsets.all(12),
-                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         )
                       : null,
                 ),
@@ -1136,7 +1250,7 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     child: Text(
                       p.enabled ? "Enabled (scheduler active)" : "Disabled",
-                      style: TextStyle(color: Colors.grey.shade700),
+                      style: const TextStyle(color: Colors.white70),
                     ),
                   ),
                   IconButton(
@@ -1149,7 +1263,10 @@ class _HomePageState extends State<HomePage> {
               const Divider(height: 24),
               Row(
                 children: [
-                  const Text("Schedule blocks", style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    "Schedule blocks",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: addBlock,
@@ -1169,7 +1286,9 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> allBlocksList(Profile p) {
     if (p.rules.isEmpty) {
-      return [Text("No blocks yet.", style: TextStyle(color: Colors.grey.shade700))];
+      return const [
+        Text("No blocks yet.", style: TextStyle(color: Colors.white70)),
+      ];
     }
 
     final blocks = [...p.rules]
@@ -1179,7 +1298,8 @@ class _HomePageState extends State<HomePage> {
         return a.start.compareTo(b.start);
       });
 
-    String dayName(int d) => const ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][d.clamp(1, 7)];
+    String dayName(int d) =>
+        const ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][d.clamp(1, 7)];
 
     return blocks.map((r) {
       return Card(
@@ -1192,7 +1312,10 @@ class _HomePageState extends State<HomePage> {
           trailing: Wrap(
             spacing: 8,
             children: [
-              IconButton(icon: const Icon(Icons.edit), onPressed: () => editBlock(p, r)),
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => editBlock(p, r),
+              ),
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () {
@@ -1209,6 +1332,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget controlsCard() {
     final locked = profileControlsDevice;
+    final slidersEnabled = device.deviceOnline && !locked;
 
     return Card(
       child: Padding(
@@ -1218,7 +1342,10 @@ class _HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                const Text("Manual Controls", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Text(
+                  "Manual Controls",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
                 const Spacer(),
                 if (locked)
                   Chip(
@@ -1231,33 +1358,41 @@ class _HomePageState extends State<HomePage> {
             if (locked) ...[
               Text(
                 "A profile is enabled, so scheduled settings override manual controls.",
-                style: TextStyle(color: Colors.orange.shade900),
+                style: TextStyle(color: Colors.orange.shade200),
               ),
               const SizedBox(height: 8),
             ],
             SwitchListTile(
               title: const Text("Swing"),
               value: uiSwing,
-              onChanged: (device.deviceOnline && !locked) ? sendSwing : null,
+              onChanged: slidersEnabled ? sendSwing : null,
             ),
             SwitchListTile(
               title: const Text("Peltier"),
               subtitle: const Text("On / Off"),
               value: uiPeltierOn,
-              onChanged: (device.deviceOnline && !locked) ? sendPeltier : null,
+              onChanged: slidersEnabled ? sendPeltier : null,
             ),
             const SizedBox(height: 6),
             sliderRow(
               title: "Cold fan",
               value: uiColdFan,
-              onChanged: (v) => setState(() => uiColdFan = v),
-              onChangeEnd: (device.deviceOnline && !locked) ? (v) => sendSlider("coldFanPwm", v.round()) : null,
+              onChanged: slidersEnabled
+                  ? (v) => setState(() => uiColdFan = v)
+                  : null,
+              onChangeEnd: slidersEnabled
+                  ? (v) => sendSlider("coldFanPwm", v.round())
+                  : null,
             ),
             sliderRow(
               title: "Hot fan",
               value: uiHotFan,
-              onChanged: (v) => setState(() => uiHotFan = v),
-              onChangeEnd: (device.deviceOnline && !locked) ? (v) => sendSlider("hotFanPwm", v.round()) : null,
+              onChanged: slidersEnabled
+                  ? (v) => setState(() => uiHotFan = v)
+                  : null,
+              onChangeEnd: slidersEnabled
+                  ? (v) => sendSlider("hotFanPwm", v.round())
+                  : null,
             ),
           ],
         ),
@@ -1274,7 +1409,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text("Peltier AC Remote"),
         actions: [
-          IconButton(onPressed: refreshAll, icon: const Icon(Icons.refresh), tooltip: "Refresh"),
+          IconButton(
+            onPressed: refreshAll,
+            icon: const Icon(Icons.refresh),
+            tooltip: "Refresh",
+          ),
         ],
       ),
       body: SafeArea(
