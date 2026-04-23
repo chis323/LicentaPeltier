@@ -8,8 +8,7 @@ public class AppConfig {
     public final String apiKey;
     public final String deviceKey;
 
-    public AppConfig(@Value("${app.apiKey}") String apiKey,
-                     @Value("${app.deviceKey}") String deviceKey) {
+    public AppConfig(@Value("${app.apiKey}") String apiKey, @Value("${app.deviceKey}") String deviceKey) {
         this.apiKey = apiKey;
         this.deviceKey = deviceKey;
     }

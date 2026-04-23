@@ -26,8 +26,7 @@ public class DeviceWsHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        String key = getQueryParam(session.getUri(), "key")
-                .orElseThrow(() -> new IllegalArgumentException("Missing key"));
+        String key = getQueryParam(session.getUri(), "key").orElseThrow(() -> new IllegalArgumentException("Missing key"));
 
         if (!cfg.deviceKey.equals(key)) {
             session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Bad device key"));

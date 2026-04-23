@@ -1,4 +1,5 @@
 package com.example.acpeltierbackend.security;
+
 import com.example.acpeltierbackend.web.dto.Dtos;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
@@ -10,9 +11,17 @@ public class DeviceRegistry {
     private final AtomicReference<WebSocketSession> deviceSession = new AtomicReference<>();
     private final AtomicReference<Dtos.StatusResponse> latestStatus = new AtomicReference<>(new Dtos.StatusResponse());
 
-    public void setSession(WebSocketSession session) { deviceSession.set(session); }
-    public WebSocketSession getSession() { return deviceSession.get(); }
-    public void clearSession() { deviceSession.set(null); }
+    public void setSession(WebSocketSession session) {
+        deviceSession.set(session);
+    }
+
+    public WebSocketSession getSession() {
+        return deviceSession.get();
+    }
+
+    public void clearSession() {
+        deviceSession.set(null);
+    }
 
     public boolean online() {
         WebSocketSession s = deviceSession.get();

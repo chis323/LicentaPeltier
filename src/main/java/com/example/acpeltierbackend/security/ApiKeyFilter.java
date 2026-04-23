@@ -16,8 +16,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain chain)
-            throws java.io.IOException, jakarta.servlet.ServletException {
+    protected void doFilterInternal(HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain chain) throws java.io.IOException, jakarta.servlet.ServletException {
 
         if (!req.getRequestURI().startsWith("/api/")) {
             chain.doFilter(req, res);
