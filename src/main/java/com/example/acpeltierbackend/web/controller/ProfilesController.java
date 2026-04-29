@@ -17,6 +17,7 @@ public class ProfilesController {
     public ProfilesController(ProfileService service) {
         this.service = service;
     }
+
     @GetMapping
     public Map<String, Object> list() {
         List<ProfileDtos.ProfileSummary> summaries = service.listSummaries();
