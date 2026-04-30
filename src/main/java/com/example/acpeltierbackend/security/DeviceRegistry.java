@@ -1,6 +1,7 @@
 package com.example.acpeltierbackend.security;
 
-import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.web.dto.StatusResponseDto;
+import com.example.acpeltierbackend.web.dto.TelemetryFrameDto;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -9,7 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class DeviceRegistry {
     private final AtomicReference<WebSocketSession> deviceSession = new AtomicReference<>();
-    private final AtomicReference<Dtos.StatusResponse> latestStatus = new AtomicReference<>(new Dtos.StatusResponse());
+    private final AtomicReference<StatusResponseDto> latestStatus = new AtomicReference<>(new StatusResponseDto());
 
     public void setSession(WebSocketSession session) {
         deviceSession.set(session);
@@ -28,14 +29,14 @@ public class DeviceRegistry {
         return s != null && s.isOpen();
     }
 
-    public Dtos.StatusResponse getLatestStatus() {
-        Dtos.StatusResponse s = latestStatus.get();
+    public StatusResponseDto getLatestStatus() {
+        StatusResponseDto s = latestStatus.get();
         s.deviceOnline = online();
         return s;
     }
 
-    public void updateFromTelemetry(Dtos.TelemetryFrame t) {
-        Dtos.StatusResponse s = new Dtos.StatusResponse();
+    public void updateFromTelemetry(TelemetryFrameDto t) {
+        StatusResponseDto s = new StatusResponseDto();
         s.deviceOnline = online();
         s.ts = t.ts;
 

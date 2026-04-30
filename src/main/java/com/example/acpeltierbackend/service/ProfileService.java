@@ -23,10 +23,7 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public List<ProfileDtos.ProfileSummary> listSummaries() {
-        return repo.findAll().stream()
-                .sorted(Comparator.comparing(p -> safeLower(p.name)))
-                .map(p -> new ProfileDtos.ProfileSummary(p.id.toString(), p.name, p.enabled))
-                .toList();
+        return repo.findAll().stream().sorted(Comparator.comparing(p -> safeLower(p.name))).map(p -> new ProfileDtos.ProfileSummary(p.id.toString(), p.name, p.enabled)).toList();
     }
 
     @Transactional
@@ -48,8 +45,7 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public ProfileDtos.Profile get(String id) {
-        ProfileEntity p = repo.findById(parseUuid(id))
-                .orElseThrow(() -> new NoSuchElementException("Profile not found"));
+        ProfileEntity p = repo.findById(parseUuid(id)).orElseThrow(() -> new NoSuchElementException("Profile not found"));
 
         p.rules.size();
         return toDto(p);
@@ -57,8 +53,7 @@ public class ProfileService {
 
     @Transactional
     public ProfileDtos.Profile save(String id, ProfileDtos.Profile incoming) {
-        ProfileEntity p = repo.findById(parseUuid(id))
-                .orElseThrow(() -> new NoSuchElementException("Profile not found"));
+        ProfileEntity p = repo.findById(parseUuid(id)).orElseThrow(() -> new NoSuchElementException("Profile not found"));
 
         if (incoming.name() != null && !incoming.name().isBlank()) {
             p.name = incoming.name().trim();
@@ -99,6 +94,7 @@ public class ProfileService {
 
         repo.deleteById(pid);
     }
+
     @Transactional
     public void setEnabled(String id, boolean enabled) {
         UUID pid = parseUuid(id);
@@ -172,21 +168,7 @@ public class ProfileService {
     }
 
     private static ProfileDtos.Profile toDto(ProfileEntity p) {
-        List<ProfileDtos.Rule> rules = p.rules.stream()
-                .sorted(Comparator
-                        .comparingInt((ProfileRuleEntity r) -> r.dayOfWeek)
-                        .thenComparing(r -> r.startTime))
-                .map(r -> new ProfileDtos.Rule(
-                        r.id.toString(),
-                        r.dayOfWeek,
-                        r.startTime.toString(),
-                        r.endTime.toString(),
-                        r.coldFanPwm,
-                        r.hotFanPwm,
-                        r.peltierOn,
-                        r.swingOn
-                ))
-                .toList();
+        List<ProfileDtos.Rule> rules = p.rules.stream().sorted(Comparator.comparingInt((ProfileRuleEntity r) -> r.dayOfWeek).thenComparing(r -> r.startTime)).map(r -> new ProfileDtos.Rule(r.id.toString(), r.dayOfWeek, r.startTime.toString(), r.endTime.toString(), r.coldFanPwm, r.hotFanPwm, r.peltierOn, r.swingOn)).toList();
 
         return new ProfileDtos.Profile(p.id.toString(), p.name, p.enabled, rules);
     }

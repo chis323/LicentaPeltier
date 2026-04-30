@@ -1,7 +1,8 @@
 package com.example.acpeltierbackend.web.controller;
 
 import com.example.acpeltierbackend.security.DeviceRegistry;
-import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.web.dto.CommandRequestDto;
+import com.example.acpeltierbackend.web.dto.StatusResponseDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class ApiController {
     }
 
     @PostMapping("/api/command")
-    public ResponseEntity<?> command(@Valid @RequestBody Dtos.CommandRequest req) throws Exception {
+    public ResponseEntity<?> command(@Valid @RequestBody CommandRequestDto req) throws Exception {
         if (!reg.online()) {
             return ResponseEntity.status(409).body(java.util.Map.of("error", "DEVICE_OFFLINE"));
         }
@@ -36,7 +37,7 @@ public class ApiController {
 
 
     @GetMapping("/api/status")
-    public Dtos.StatusResponse status() {
+    public StatusResponseDto status() {
         return reg.getLatestStatus();
     }
 

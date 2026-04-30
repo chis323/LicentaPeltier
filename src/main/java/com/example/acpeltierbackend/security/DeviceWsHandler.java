@@ -1,6 +1,6 @@
 package com.example.acpeltierbackend.security;
 
-import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.web.dto.TelemetryFrameDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -43,7 +43,7 @@ public class DeviceWsHandler extends TextWebSocketHandler {
         String type = root.path("type").asText("");
 
         if ("telemetry".equals(type)) {
-            Dtos.TelemetryFrame t = om.treeToValue(root, Dtos.TelemetryFrame.class);
+            TelemetryFrameDto t = om.treeToValue(root, TelemetryFrameDto.class);
             if (t.ts == null) t.ts = System.currentTimeMillis();
             reg.updateFromTelemetry(t);
             try {

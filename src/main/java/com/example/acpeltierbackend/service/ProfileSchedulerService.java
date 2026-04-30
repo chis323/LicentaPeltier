@@ -1,6 +1,6 @@
 package com.example.acpeltierbackend.service;
 
-import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.web.dto.CommandRequestDto;
 import com.example.acpeltierbackend.entity.ProfileEntity;
 import com.example.acpeltierbackend.entity.ProfileRuleEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,7 +16,7 @@ public class ProfileSchedulerService {
     private final ProfileService profileService;
     private final CommandSenderService sender;
 
-    private Dtos.CommandRequest lastApplied = null;
+    private CommandRequestDto lastApplied = null;
 
     private final ZoneId zone = ZoneId.of("Europe/Bucharest");
 
@@ -48,7 +48,7 @@ public class ProfileSchedulerService {
                 return;
             }
 
-            Dtos.CommandRequest cmd = new Dtos.CommandRequest();
+            CommandRequestDto cmd = new CommandRequestDto();
             cmd.coldFanPwm = match.coldFanPwm;
             cmd.hotFanPwm = match.hotFanPwm;
             cmd.peltierOn = match.peltierOn;
@@ -85,7 +85,7 @@ public class ProfileSchedulerService {
     }
 
     private void applyIdleIfNeeded(String reason) {
-        Dtos.CommandRequest idle = new Dtos.CommandRequest();
+        CommandRequestDto idle = new CommandRequestDto();
         idle.coldFanPwm = 0;
         idle.hotFanPwm = 0;
         idle.peltierOn = false;
@@ -126,7 +126,7 @@ public class ProfileSchedulerService {
         return r.startTime.equals(r.endTime) && r.dayOfWeek == dow;
     }
 
-    private static boolean same(Dtos.CommandRequest a, Dtos.CommandRequest b) {
+    private static boolean same(CommandRequestDto a, CommandRequestDto b) {
         if (a == b) return true;
         if (a == null || b == null) return false;
         return eq(a.coldFanPwm, b.coldFanPwm)

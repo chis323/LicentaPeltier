@@ -4,7 +4,7 @@ import com.example.acpeltierbackend.entity.ProfileEntity;
 import com.example.acpeltierbackend.service.CommandSenderService;
 import com.example.acpeltierbackend.service.ProfileSchedulerService;
 import com.example.acpeltierbackend.service.ProfileService;
-import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.web.dto.CommandRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -36,7 +36,7 @@ class ProfileSchedulerServiceTests {
         service.tick();
 
         verify(sender).sendCommand(argThat(payload -> {
-            Dtos.CommandRequest cmd = (Dtos.CommandRequest) payload;
+            CommandRequestDto cmd = (CommandRequestDto) payload;
             return cmd.coldFanPwm == 0 && cmd.hotFanPwm == 0 && Boolean.FALSE.equals(cmd.peltierOn) && Boolean.FALSE.equals(cmd.swingOn);
         }));
     }
@@ -70,7 +70,7 @@ class ProfileSchedulerServiceTests {
         service.tick();
 
         verify(sender).sendCommand(argThat(payload -> {
-            Dtos.CommandRequest cmd = (Dtos.CommandRequest) payload;
+            CommandRequestDto cmd = (CommandRequestDto) payload;
             return cmd.coldFanPwm == 0 && cmd.hotFanPwm == 0;
         }));
     }

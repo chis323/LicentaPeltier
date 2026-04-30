@@ -2,7 +2,8 @@ package com.example.acpeltierbackend.apiTests;
 
 import com.example.acpeltierbackend.security.DeviceRegistry;
 import com.example.acpeltierbackend.web.controller.ApiController;
-import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.web.dto.CommandRequestDto;
+import com.example.acpeltierbackend.web.dto.StatusResponseDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -37,7 +38,7 @@ class ApiControllerTests {
 
     @Test
     void status_returnsLatestStatus() {
-        Dtos.StatusResponse status = new Dtos.StatusResponse();
+        StatusResponseDto status = new StatusResponseDto();
         status.deviceOnline = true;
         status.ambientTempC = 22.5;
 
@@ -54,7 +55,7 @@ class ApiControllerTests {
 
         ApiController controller = new ApiController(reg);
 
-        Dtos.CommandRequest req = new Dtos.CommandRequest();
+        CommandRequestDto req = new CommandRequestDto();
         req.coldFanPwm = 50;
         req.hotFanPwm = 60;
         req.peltierOn = true;
@@ -74,7 +75,7 @@ class ApiControllerTests {
 
         ApiController controller = new ApiController(reg);
 
-        Dtos.CommandRequest req = new Dtos.CommandRequest();
+        CommandRequestDto req = new CommandRequestDto();
         req.coldFanPwm = 50;
         req.hotFanPwm = 60;
         req.peltierOn = true;

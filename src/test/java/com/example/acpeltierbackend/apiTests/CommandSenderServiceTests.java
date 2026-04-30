@@ -2,7 +2,7 @@ package com.example.acpeltierbackend.apiTests;
 
 import com.example.acpeltierbackend.security.DeviceRegistry;
 import com.example.acpeltierbackend.service.CommandSenderService;
-import com.example.acpeltierbackend.web.dto.Dtos;
+import com.example.acpeltierbackend.web.dto.CommandRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,7 +28,7 @@ class CommandSenderServiceTests {
 
         CommandSenderService service = new CommandSenderService(reg);
 
-        assertFalse(service.sendCommand(new Dtos.CommandRequest()));
+        assertFalse(service.sendCommand(new CommandRequestDto()));
         verify(reg, never()).getSession();
     }
 
@@ -37,7 +37,7 @@ class CommandSenderServiceTests {
         when(reg.online()).thenReturn(true);
         when(reg.getSession()).thenReturn(session);
 
-        Dtos.CommandRequest req = new Dtos.CommandRequest();
+        CommandRequestDto req = new CommandRequestDto();
         req.coldFanPwm = 25;
         req.hotFanPwm = 75;
         req.peltierOn = true;
