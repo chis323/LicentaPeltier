@@ -38,10 +38,7 @@ public class ProfileSchedulerService {
 
             ZonedDateTime now = ZonedDateTime.now(zone);
 
-            ProfileRuleEntity match = p.rules.stream()
-                    .filter(r -> matchesRule(now, r))
-                    .max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime))
-                    .orElse(null);
+            ProfileRuleEntity match = p.rules.stream().filter(r -> matchesRule(now, r)).max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime)).orElse(null);
 
             if (match == null) {
                 applyIdleIfNeeded("no matching block");
@@ -61,19 +58,7 @@ public class ProfileSchedulerService {
             boolean ok = sender.sendCommand(cmd);
             if (ok) {
                 lastApplied = cmd;
-                System.out.printf(
-                        "[SCHED] applied profile '%s' block: DOW=%d %s-%s -> cold=%d hot=%d peltier=%s swing=%s (zone=%s now=%s)%n",
-                        p.name,
-                        match.dayOfWeek,
-                        match.startTime,
-                        match.endTime,
-                        cmd.coldFanPwm,
-                        cmd.hotFanPwm,
-                        cmd.peltierOn,
-                        cmd.swingOn,
-                        zone,
-                        now
-                );
+                System.out.printf("[SCHED] applied profile '%s' block: DOW=%d %s-%s -> cold=%d hot=%d peltier=%s swing=%s (zone=%s now=%s)%n", p.name, match.dayOfWeek, match.startTime, match.endTime, cmd.coldFanPwm, cmd.hotFanPwm, cmd.peltierOn, cmd.swingOn, zone, now);
             } else {
                 System.out.println("[SCHED] device offline, cannot send command");
             }
@@ -107,9 +92,7 @@ public class ProfileSchedulerService {
         LocalTime t = now.toLocalTime().withSecond(0).withNano(0);
 
         if (r.startTime.isBefore(r.endTime)) {
-            return r.dayOfWeek == dow &&
-                    !t.isBefore(r.startTime) &&
-                    t.isBefore(r.endTime);
+            return r.dayOfWeek == dow && !t.isBefore(r.startTime) && t.isBefore(r.endTime);
         }
 
         if (r.startTime.isAfter(r.endTime)) {
@@ -129,10 +112,7 @@ public class ProfileSchedulerService {
     private static boolean same(CommandRequestDto a, CommandRequestDto b) {
         if (a == b) return true;
         if (a == null || b == null) return false;
-        return eq(a.coldFanPwm, b.coldFanPwm)
-                && eq(a.hotFanPwm, b.hotFanPwm)
-                && eq(a.peltierOn, b.peltierOn)
-                && eq(a.swingOn, b.swingOn);
+        return eq(a.coldFanPwm, b.coldFanPwm) && eq(a.hotFanPwm, b.hotFanPwm) && eq(a.peltierOn, b.peltierOn) && eq(a.swingOn, b.swingOn);
     }
 
     private static boolean eq(Object x, Object y) {
