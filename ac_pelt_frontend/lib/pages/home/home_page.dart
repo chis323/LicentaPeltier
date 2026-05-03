@@ -404,7 +404,7 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profile deleted ✅")),
+        const SnackBar(content: Text("Profile deleted")),
       );
     } catch (e) {
       showErrorDialog(e);
