@@ -4,11 +4,11 @@ import json
 import time
 from pathlib import Path
 
+import board
+import adafruit_dht
 import websockets
 from gpiozero import DigitalOutputDevice, PWMOutputDevice
 
-import board
-import adafruit_dht
 
 PC_HOST = "licentapeltier.onrender.com"
 DEVICE_KEY = "CHANGE_ME_DEVICE_KEY"
@@ -23,87 +23,69 @@ FAN_PWM_PIN = 26
 DHT_PIN = board.D4
 DHT_USE_PULSEIO = False
 
-PWMCHIP_STR = "/sys/class/pwm/pwmchip0"
-CHIP = Path(PWMCHIP_STR)
+CHIP = Path("/sys/class/pwm/pwmchip0")
 SERVO_PWM = CHIP / "pwm3"
 
+SERVO_CHANNEL = 3
 SERVO_PERIOD = 20_000_000
 SERVO_MIN = 10_000
 SERVO_MID = 800_000
 SERVO_MAX = 1_500_000
 
 
-async def delay(seconds: float):
-    await asyncio.sleep(seconds)
+async def sleep_ms(ms: int):
+    await asyncio.sleep(ms / 1000)
 
 
-async def delay_ms(milliseconds: int):
-    await asyncio.sleep(milliseconds / 1000.0)
-
-
-def current_epoch_ms() -> int:
+def now_ms() -> int:
     return int(time.time() * 1000)
 
 
-def clamp_int(x, lo=0, hi=100):
+def clamp_int(value, lo=0, hi=100):
     try:
-        x = int(x)
+        value = int(value)
+        return max(lo, min(hi, value))
     except Exception:
         return None
-    return max(lo, min(hi, x))
 
 
-def write_path(path: Path, value: int):
+def write(path: Path, value):
     path.write_text(str(value))
 
 
 async def ensure_servo_exported():
     if not SERVO_PWM.exists():
-        write_path(CHIP / "export", 3)
-        await delay_ms(100)
+        write(CHIP / "export", SERVO_CHANNEL)
+        await sleep_ms(100)
 
     if not SERVO_PWM.exists():
         raise RuntimeError(f"{SERVO_PWM} missing after export")
 
 
 def servo_enable():
-    write_path(SERVO_PWM / "enable", 0)
-    write_path(SERVO_PWM / "period", SERVO_PERIOD)
-    write_path(SERVO_PWM / "duty_cycle", SERVO_MID)
-    write_path(SERVO_PWM / "enable", 1)
+    write(SERVO_PWM / "enable", 0)
+    write(SERVO_PWM / "period", SERVO_PERIOD)
+    write(SERVO_PWM / "duty_cycle", SERVO_MID)
+    write(SERVO_PWM / "enable", 1)
 
 
 def servo_disable():
     try:
-        write_path(SERVO_PWM / "enable", 0)
+        write(SERVO_PWM / "enable", 0)
     except Exception:
         pass
 
 
 def servo_set_ns(duty_ns: int):
     duty_ns = max(0, min(SERVO_PERIOD, int(duty_ns)))
-    write_path(SERVO_PWM / "duty_cycle", duty_ns)
+    write(SERVO_PWM / "duty_cycle", duty_ns)
 
 
 class Hardware:
     def __init__(self):
-        self.peltier = DigitalOutputDevice(
-            PELTIERSW_PIN,
-            active_high=True,
-            initial_value=False,
-        )
-
-        self.fan18 = DigitalOutputDevice(
-            FAN_ALWAYS_ON_PIN,
-            active_high=True,
-            initial_value=False,
-        )
-
-        self.fan26 = PWMOutputDevice(
-            FAN_PWM_PIN,
-            active_high=True,
-            initial_value=0.0,
-        )
+        self.peltier = DigitalOutputDevice(PELTIERSW_PIN, active_high=True, initial_value=False)
+        self.hot_fan = DigitalOutputDevice(FAN_ALWAYS_ON_PIN, active_high=True, initial_value=False)
+        self.cold_fan = PWMOutputDevice(FAN_PWM_PIN, active_high=True, initial_value=0.0)
 
         self.servo_ok = False
         self.swing_task: asyncio.Task | None = None
@@ -138,20 +120,19 @@ class Hardware:
             print("[HW] Initializing DHT22 on GPIO4...")
             self.dht = adafruit_dht.DHT22(DHT_PIN, use_pulseio=DHT_USE_PULSEIO)
             self.dht_ready = False
-
-            async def mark_ready():
-                await delay(2)
-                self.dht_ready = True
-
-            self.dht_init_task = asyncio.create_task(mark_ready())
+            self.dht_init_task = asyncio.create_task(self.mark_dht_ready())
         except Exception as e:
             print("[HW] DHT init failed:", repr(e))
             self.dht = None
             self.dht_ready = False
 
+    async def mark_dht_ready(self):
+        await asyncio.sleep(2)
+        self.dht_ready = True
+
     async def reinit_dht(self):
         try:
-            if self.dht is not None:
+            if self.dht:
                 self.dht.exit()
         except Exception:
             pass
@@ -159,72 +140,15 @@ class Hardware:
         self.dht = None
         self.dht_ready = False
 
-        await delay(2)
-
-        try:
-            self.dht = adafruit_dht.DHT22(DHT_PIN, use_pulseio=DHT_USE_PULSEIO)
-            self.dht_ready = False
-
-            async def mark_ready():
-                await delay(2)
-                self.dht_ready = True
-
-            self.dht_init_task = asyncio.create_task(mark_ready())
-        except Exception as e:
-            print("[HW] DHT reinit failed:", repr(e))
-            self.dht = None
-            self.dht_ready = False
-
-    def shutdown(self):
-        try:
-            if self.swing_task and not self.swing_task.done():
-                self.swing_task.cancel()
-        except Exception:
-            pass
-
-        try:
-            if self.dht_init_task and not self.dht_init_task.done():
-                self.dht_init_task.cancel()
-        except Exception:
-            pass
-
-        try:
-            self.peltier.off()
-            self.peltier.close()
-        except Exception:
-            pass
-
-        try:
-            self.fan18.off()
-            self.fan18.close()
-        except Exception:
-            pass
-
-        try:
-            self.fan26.value = 0.0
-            self.fan26.close()
-        except Exception:
-            pass
-
-        try:
-            servo_disable()
-        except Exception:
-            pass
-
-        try:
-            if self.dht is not None:
-                self.dht.exit()
-        except Exception:
-            pass
+        await asyncio.sleep(2)
+        await self.init_dht()
 
     async def read_dht22(self):
-        if self.dht is None or not self.dht_ready:
+        if not self.dht or not self.dht_ready:
             return None, None
 
         try:
-            temperature = self.dht.temperature
-            humidity = self.dht.humidity
-            return temperature, humidity
+            return self.dht.temperature, self.dht.humidity
         except RuntimeError:
             return None, None
         except Exception as e:
@@ -232,43 +156,55 @@ class Hardware:
             await self.reinit_dht()
             return None, None
 
-    def set_cold_fan_pwm(self, pwm_0_100: int):
-        self.state["coldFanPwm"] = pwm_0_100
-        self.fan26.value = pwm_0_100 / 100.0
-        print(f"[HW] cold fan (GPIO26) -> {pwm_0_100}%")
+    def set_cold_fan_pwm(self, value: int):
+        self.state["coldFanPwm"] = value
+        self.cold_fan.value = value / 100
+        print(f"[HW] cold fan (GPIO26) -> {value}%")
 
-    def set_hot_fan_pwm(self, pwm_0_100: int):
-        self.state["hotFanPwm"] = pwm_0_100
-        if pwm_0_100 > 0:
-            self.fan18.on()
+    def set_hot_fan_pwm(self, value: int):
+        self.state["hotFanPwm"] = value
+
+        if value > 0:
+            self.hot_fan.on()
             print("[HW] hot fan (GPIO18) -> ON")
         else:
-            self.fan18.off()
+            self.hot_fan.off()
             print("[HW] hot fan (GPIO18) -> OFF")
 
-    def set_peltier(self, on: bool):
-        self.state["peltierOn"] = on
-        if on:
+    def set_peltier(self, enabled: bool):
+        self.state["peltierOn"] = enabled
+
+        if enabled:
             self.peltier.on()
             print("[HW] peltier (GPIO20) -> ON")
         else:
             self.peltier.off()
             print("[HW] peltier (GPIO20) -> OFF")
 
-    def set_swing(self, on: bool):
-        self.state["swingOn"] = on
-        print(f"[HW] swing -> {on}")
+    def set_swing(self, enabled: bool):
+        self.state["swingOn"] = enabled
+        print(f"[HW] swing -> {enabled}")
+        self.update_swing_task()
+
+    def update_swing_task(self):
+        if self.state["swingOn"]:
+            if not self.swing_task or self.swing_task.done():
+                self.swing_task = asyncio.create_task(self.swing_loop())
+        else:
+            if self.swing_task and not self.swing_task.done():
+                self.swing_task.cancel()
 
     async def swing_loop(self):
         if not self.servo_ok:
             return
 
         try:
-            while self.state.get("swingOn"):
-                await self.servo_ramp_async(SERVO_MIN, SERVO_MAX, seconds=2.5, hz=80)
-                await self.servo_ramp_async(SERVO_MAX, SERVO_MIN, seconds=2.5, hz=80)
+            while self.state["swingOn"]:
+                await self.servo_ramp(SERVO_MIN, SERVO_MAX)
+                await self.servo_ramp(SERVO_MAX, SERVO_MIN)
 
             servo_set_ns(SERVO_MID)
+
         except asyncio.CancelledError:
             try:
                 servo_set_ns(SERVO_MID)
@@ -276,113 +212,156 @@ class Hardware:
                 pass
             raise
 
-    async def servo_ramp_async(self, start, end, seconds=2.5, hz=80):
+    async def servo_ramp(self, start, end, seconds=2.5, hz=80):
         steps = max(1, int(seconds * hz))
-        dt = seconds / steps
+        delay = seconds / steps
 
         for i in range(steps + 1):
-            if not self.state.get("swingOn"):
+            if not self.state["swingOn"]:
                 return
+
             pulse = int(start + (end - start) * (i / steps))
             servo_set_ns(pulse)
-            await delay(dt)
+            await asyncio.sleep(delay)
 
-    def ensure_swing_task(self):
-        if self.state.get("swingOn"):
-            if self.swing_task is None or self.swing_task.done():
-                self.swing_task = asyncio.create_task(self.swing_loop())
-        else:
-            if self.swing_task and not self.swing_task.done():
-                self.swing_task.cancel()
+    def shutdown(self):
+        self.cancel_task(self.swing_task)
+        self.cancel_task(self.dht_init_task)
+
+        self.close_output(self.peltier)
+        self.close_output(self.hot_fan)
+
+        try:
+            self.cold_fan.value = 0.0
+            self.cold_fan.close()
+        except Exception:
+            pass
+
+        servo_disable()
+
+        try:
+            if self.dht:
+                self.dht.exit()
+        except Exception:
+            pass
+
+    @staticmethod
+    def cancel_task(task):
+        try:
+            if task and not task.done():
+                task.cancel()
+        except Exception:
+            pass
+
+    @staticmethod
+    def close_output(device):
+        try:
+            device.off()
+            device.close()
+        except Exception:
+            pass
 
 
 def read_other_temps():
     return None, None
 
 
+def build_telemetry(hw: Hardware):
+    hot_temp, cold_temp = read_other_temps()
+
+    return {
+        "type": "telemetry",
+        "ts": now_ms(),
+        "hotSideTempC": hot_temp,
+        "coldSideTempC": cold_temp,
+        "coldFanPwm": hw.state["coldFanPwm"],
+        "hotFanPwm": hw.state["hotFanPwm"],
+        "peltierOn": hw.state["peltierOn"],
+        "swingOn": hw.state["swingOn"],
+        "fault": None,
+    }
+
+
 async def telemetry_loop(ws, hw: Hardware):
     while True:
         ambient_temp, humidity = await hw.read_dht22()
-        hot_temp, cold_temp = read_other_temps()
 
-        msg = {
-            "type": "telemetry",
-            "ts": current_epoch_ms(),
-            "ambientTempC": ambient_temp,
-            "humidityPct": humidity,
-            "hotSideTempC": hot_temp,
-            "coldSideTempC": cold_temp,
-            "coldFanPwm": hw.state.get("coldFanPwm"),
-            "hotFanPwm": hw.state.get("hotFanPwm"),
-            "peltierOn": hw.state.get("peltierOn"),
-            "swingOn": hw.state.get("swingOn"),
-            "fault": None,
-        }
+        msg = build_telemetry(hw)
+        msg["ambientTempC"] = ambient_temp
+        msg["humidityPct"] = humidity
 
         await ws.send(json.dumps(msg))
         print("[NET] sent telemetry")
-        await delay(TELEMETRY_INTERVAL_SEC)
+
+        await asyncio.sleep(TELEMETRY_INTERVAL_SEC)
 
 
 def apply_command(payload, hw: Hardware):
-    if "swingOn" in payload and payload["swingOn"] is not None:
+    if payload.get("swingOn") is not None:
         hw.set_swing(bool(payload["swingOn"]))
-        hw.ensure_swing_task()
 
-    if "coldFanPwm" in payload and payload["coldFanPwm"] is not None:
+    if payload.get("coldFanPwm") is not None:
         value = clamp_int(payload["coldFanPwm"])
         if value is not None:
             hw.set_cold_fan_pwm(value)
 
-    if "hotFanPwm" in payload and payload["hotFanPwm"] is not None:
+    if payload.get("hotFanPwm") is not None:
         value = clamp_int(payload["hotFanPwm"])
         if value is not None:
             hw.set_hot_fan_pwm(value)
 
-    if "peltierOn" in payload and payload["peltierOn"] is not None:
+    if payload.get("peltierOn") is not None:
         hw.set_peltier(bool(payload["peltierOn"]))
 
 
 async def receiver_loop(ws, hw: Hardware):
     async for raw in ws:
         print("[NET] received:", raw)
+
         try:
             data = json.loads(raw)
         except Exception:
             continue
 
         if data.get("type") == "command":
-            payload = data.get("payload") or {}
-            apply_command(payload, hw)
+            apply_command(data.get("payload") or {}, hw)
+
+
+async def connect_loop(hw: Hardware):
+    backoff = 1
+
+    while True:
+        try:
+            print(f"[NET] connecting -> {BACKEND_WS}")
+
+            async with websockets.connect(
+                BACKEND_WS,
+                ping_interval=20,
+                ping_timeout=20,
+                open_timeout=30,
+            ) as ws:
+                print("[NET] connected")
+                backoff = 1
+
+                await asyncio.gather(
+                    telemetry_loop(ws, hw),
+                    receiver_loop(ws, hw),
+                )
+
+        except Exception as e:
+            print("[NET] disconnected:", type(e).__name__, repr(e))
+            print(f"[NET] retry in {backoff}s...")
+
+            await asyncio.sleep(backoff)
+            backoff = min(backoff * 2, 30)
 
 
 async def main():
     hw = Hardware()
-    await hw.async_init()
-
-    backoff = 1
 
     try:
-        while True:
-            try:
-                print(f"[NET] connecting -> {BACKEND_WS}")
-                async with websockets.connect(
-                    BACKEND_WS,
-                    ping_interval=20,
-                    ping_timeout=20,
-                    open_timeout=30,
-                ) as ws:
-                    print("[NET] connected ✅")
-                    backoff = 1
-                    await asyncio.gather(
-                        telemetry_loop(ws, hw),
-                        receiver_loop(ws, hw),
-                    )
-            except Exception as e:
-                print("[NET] disconnected:", type(e).__name__, repr(e))
-                print(f"[NET] retry in {backoff}s...")
-                await delay(backoff)
-                backoff = min(backoff * 2, 30)
+        await hw.async_init()
+        await connect_loop(hw)
     finally:
         hw.shutdown()
 
