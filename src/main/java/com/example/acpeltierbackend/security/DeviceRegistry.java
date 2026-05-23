@@ -39,20 +39,12 @@ public class DeviceRegistry {
         StatusResponseDto s = new StatusResponseDto();
         s.deviceOnline = online();
         s.ts = t.ts;
-
         s.ambientTempC = t.ambientTempC;
         s.humidityPct = t.humidityPct;
-
-        s.hotSideTempC = t.hotSideTempC;
-        s.coldSideTempC = t.coldSideTempC;
-
         s.coldFanPwm = t.coldFanPwm;
         s.hotFanPwm = t.hotFanPwm;
         s.peltierOn = t.peltierOn;
-
         s.swingOn = t.swingOn;
-        s.fault = t.fault;
-
         latestStatus.set(s);
     }
 }
