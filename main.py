@@ -189,15 +189,12 @@ def build_telemetry(hw: Hardware, ambient_temp, humidity):
     return {
         "type": "telemetry",
         "ts": now_ms(),
-        "hotSideTempC": None,
-        "coldSideTempC": None,
         "ambientTempC": ambient_temp,
         "humidityPct": humidity,
         "coldFanPwm": hw.state["coldFanPwm"],
         "hotFanPwm": hw.state["hotFanPwm"],
         "peltierOn": hw.state["peltierOn"],
         "swingOn": hw.state["swingOn"],
-        "fault": None,
     }
 
 async def telemetry_loop(ws, hw: Hardware):
@@ -205,7 +202,6 @@ async def telemetry_loop(ws, hw: Hardware):
         ambient_temp, humidity = await hw.read_dht22()
         msg = build_telemetry(hw, ambient_temp, humidity)
         await ws.send(json.dumps(msg))
-        print("[NET] sent telemetry")
         await asyncio.sleep(TELEMETRY_INTERVAL_SEC)
 
 
@@ -238,7 +234,6 @@ async def connect_loop(hw: Hardware):
     backoff = 1
     while True:
         try:
-            print(f"[NET] connecting -> {BACKEND_WS}")
             async with websockets.connect(BACKEND_WS,ping_interval=20,ping_timeout=20,open_timeout=30,)as ws:
                 print("[NET] connected")
                 backoff = 1
