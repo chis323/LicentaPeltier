@@ -61,7 +61,7 @@ def disable_servo_pwm():
 class Hardware:
     def __init__(self):
         self.peltier = DigitalOutputDevice(PELTIERSW_PIN,active_high=True,initial_value=False,)
-        self.hot_fan = DigitalOutputDevice(FAN_ALWAYS_ON_PIN,active_high=True,initial_value=False,)
+        self.hot_fan = DigitalOutputDevice(FAN_ALWAYS_ON_PIN,active_high=True,initial_value=0.0,)
         self.cold_fan = PWMOutputDevice(FAN_PWM_PIN,active_high=True,initial_value=0.0,)
         self.dht = None
         self.dht_ready = False
@@ -120,29 +120,20 @@ class Hardware:
     def set_cold_fan_pwm(self, value: int):
         self.state["coldFanPwm"] = value
         self.cold_fan.value = value / 100
-        print(f"[HW] cold fan GPIO26 -> {value}%")
 
     def set_hot_fan_pwm(self, value: int):
-        self.state["hotFanPwm"] = value
-        if value > 0:
-            self.hot_fan.on()
-            print("[HW] hot fan GPIO18 -> ON")
-        else:
-            self.hot_fan.off()
-            print("[HW] hot fan GPIO18 -> OFF")
+    self.state["hotFanPwm"] = value
+    self.hot_fan.value = value / 100
 
     def set_peltier(self, enabled: bool):
         self.state["peltierOn"] = enabled
         if enabled:
             self.peltier.on()
-            print("[HW] peltier GPIO20 -> ON")
         else:
             self.peltier.off()
-            print("[HW] peltier GPIO20 -> OFF")
 
     def set_swing(self, enabled: bool):
         self.state["swingOn"] = enabled
-        print(f"[HW] swing -> {enabled}")
         if enabled:
             if not self.swing_task or self.swing_task.done():
                 self.swing_task = asyncio.create_task(self.swing_loop())
@@ -174,7 +165,6 @@ class Hardware:
             await asyncio.sleep(delay)
 
     def shutdown(self):
-        # opreste toate componentele hardware
         if self.swing_task and not self.swing_task.done():
             self.swing_task.cancel()
         try:
