@@ -61,8 +61,8 @@ def disable_servo_pwm():
 class Hardware:
     def __init__(self):
         self.peltier = DigitalOutputDevice(PELTIERSW_PIN,active_high=True,initial_value=False,)
-        self.hot_fan = DigitalOutputDevice(FAN_ALWAYS_ON_PIN,active_high=True,initial_value=0.0,)
-        self.cold_fan = PWMOutputDevice(FAN_PWM_PIN,active_high=True,initial_value=0.0,)
+        self.hot_fan = PWMOutputDevice(FAN_ALWAYS_ON_PIN,active_high=True,initial_value=0.0,)
+        self.cold_fan = (FAN_PWM_PIN,active_high=True,initial_value=0.0,)
         self.dht = None
         self.dht_ready = False
         self.servo_ok = False
@@ -122,8 +122,8 @@ class Hardware:
         self.cold_fan.value = value / 100
 
     def set_hot_fan_pwm(self, value: int):
-    self.state["hotFanPwm"] = value
-    self.hot_fan.value = value / 100
+        self.state["hotFanPwm"] = value
+        self.hot_fan.value = value / 100
 
     def set_peltier(self, enabled: bool):
         self.state["peltierOn"] = enabled
