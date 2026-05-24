@@ -57,12 +57,16 @@ def disable_servo_pwm():
         write(SERVO_PWM / "enable", 0)
     except Exception:
         pass
+def fail_safe(self):
+    self.set_peltier(False)
+    self.set_swing(False)
+    self.set_cold_fan_pwm(0)
 
 class Hardware:
     def __init__(self):
         self.peltier = DigitalOutputDevice(PELTIERSW_PIN,active_high=True,initial_value=False,)
         self.hot_fan = PWMOutputDevice(FAN_ALWAYS_ON_PIN,active_high=True,initial_value=0.0,)
-        self.cold_fan = (FAN_PWM_PIN,active_high=True,initial_value=0.0,)
+        self.cold_fan = PWMOutputDevice(FAN_PWM_PIN,active_high=True,initial_value=0.0,)
         self.dht = None
         self.dht_ready = False
         self.servo_ok = False
@@ -240,6 +244,7 @@ async def connect_loop(hw: Hardware):
                 await asyncio.gather(telemetry_loop(ws, hw),receiver_loop(ws, hw),)
         except Exception as e:
             print("[NET] disconnected:", type(e).__name__, repr(e))
+            hw.fail_safe()
             print(f"[NET] retry in {backoff}s...")
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, 30)
