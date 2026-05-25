@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
+import 'data/auth/auth_storage.dart';
 import 'pages/home/home_page.dart';
+import 'pages/login/login_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -63,7 +66,23 @@ class MyApp extends StatelessWidget {
           contentTextStyle: TextStyle(color: Colors.white70, fontSize: 16),
         ),
       ),
-      home: const HomePage(),
+      home: FutureBuilder<String?>(
+        future: AuthStorage().getToken(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final token = snapshot.data;
+          if (token == null || token.isEmpty) {
+            return const LoginPage();
+          }
+
+          return const HomePage();
+        },
+      ),
     );
   }
 }
