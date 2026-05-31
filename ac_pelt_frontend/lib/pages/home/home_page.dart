@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/api/api_service.dart';
+import '../login/login_page.dart';
 import '../../models/daily_stat.dart';
 import '../../models/device_state.dart';
 import '../../models/profile.dart';
@@ -1111,6 +1112,17 @@ class _HomePageState extends State<HomePage> {
             onPressed: refreshAll,
             icon: const Icon(Icons.refresh),
             tooltip: "Refresh",
+          ),
+          IconButton(
+            onPressed: () async {
+              await api.logout();
+              if (!mounted) return;
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              );
+            },
+            icon: const Icon(Icons.logout),
+            tooltip: "Logout",
           ),
         ],
       ),

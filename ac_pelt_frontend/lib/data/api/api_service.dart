@@ -6,19 +6,56 @@ import '../../core/constants/constants.dart';
 import '../../models/daily_stat.dart';
 import '../../models/profile.dart';
 import '../../models/profile_summary.dart';
+import '../auth/auth_storage.dart';
 
 class ApiService {
+  final AuthStorage _authStorage;
+
+  ApiService({AuthStorage? authStorage})
+      : _authStorage = authStorage ?? AuthStorage();
+
   Uri _uri(String path, [Map<String, String>? query]) {
-    return Uri.parse("$baseUrl$path").replace(
-      queryParameters: {'key': apiKey, ...?query},
-    );
+    return Uri.parse("$baseUrl$path").replace(queryParameters: query);
   }
+
+  Future<Map<String, String>> _headers({bool json = false}) async {
+    final token = await _authStorage.getToken();
+    return {
+      if (json) 'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  Future<void> login(String username, String password) async {
+    final res = await http.post(
+      _uri('/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+      }),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Login failed: ${res.statusCode} ${res.body}');
+    }
+
+    final obj = jsonDecode(res.body) as Map<String, dynamic>;
+    final token = obj['token'] as String?;
+    if (token == null || token.isEmpty) {
+      throw Exception('Login failed: no token returned');
+    }
+
+    await _authStorage.saveToken(token);
+  }
+
+  Future<void> logout() => _authStorage.clearToken();
 
   Future<Map<String, dynamic>> _getJson(
     String path, [
     Map<String, String>? query,
   ]) async {
-    final res = await http.get(_uri(path, query));
+    final res = await http.get(_uri(path, query), headers: await _headers());
     if (res.statusCode != 200) {
       throw Exception("GET $path failed: ${res.statusCode} ${res.body}");
     }
@@ -36,19 +73,19 @@ class ApiService {
       case 'POST':
         res = await http.post(
           _uri(path),
-          headers: {'Content-Type': 'application/json'},
+          headers: await _headers(json: true),
           body: jsonEncode(body ?? {}),
         );
         break;
       case 'PUT':
         res = await http.put(
           _uri(path),
-          headers: {'Content-Type': 'application/json'},
+          headers: await _headers(json: true),
           body: jsonEncode(body ?? {}),
         );
         break;
       case 'DELETE':
-        res = await http.delete(_uri(path));
+        res = await http.delete(_uri(path), headers: await _headers());
         break;
       default:
         throw Exception("Unsupported method: $method");
