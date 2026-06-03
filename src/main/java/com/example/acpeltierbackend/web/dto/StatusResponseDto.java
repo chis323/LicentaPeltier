@@ -1,20 +1,16 @@
 package com.example.acpeltierbackend.web.dto;
 
-public class StatusResponseDto {
-    public boolean deviceOnline;
-
-    public Long ts;
-
-    public Double ambientTempC;
-    public Double humidityPct;
-
-    public Double hotSideTempC;
-    public Double coldSideTempC;
-
-    public Integer coldFanPwm;
-    public Integer hotFanPwm;
-    public Boolean peltierOn;
-
-    public Boolean swingOn;
-    public String fault;
+public record StatusResponseDto(
+        boolean deviceOnline,
+        Long ts,
+        Double ambientTempC,
+        Double humidityPct,
+        Double hotSideTempC,
+        Double coldSideTempC,
+        Integer coldFanPwm,
+        Integer hotFanPwm,
+        Boolean peltierOn,
+        Boolean swingOn,
+        String fault
+) {
 }

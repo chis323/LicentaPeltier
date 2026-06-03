@@ -37,7 +37,7 @@ class ProfileSchedulerServiceTests {
 
         verify(sender).sendCommand(argThat(payload -> {
             CommandRequestDto cmd = (CommandRequestDto) payload;
-            return cmd.coldFanPwm == 0 && cmd.hotFanPwm == 0 && Boolean.FALSE.equals(cmd.peltierOn) && Boolean.FALSE.equals(cmd.swingOn);
+            return cmd.coldFanPwm() == 0 && cmd.hotFanPwm()  == 0 && Boolean.FALSE.equals(cmd.peltierOn() ) && Boolean.FALSE.equals(cmd.swingOn() );
         }));
     }
 
@@ -71,7 +71,7 @@ class ProfileSchedulerServiceTests {
 
         verify(sender).sendCommand(argThat(payload -> {
             CommandRequestDto cmd = (CommandRequestDto) payload;
-            return cmd.coldFanPwm == 0 && cmd.hotFanPwm == 0;
+            return cmd.coldFanPwm()  == 0 && cmd.hotFanPwm()  == 0;
         }));
     }
 
