@@ -8,7 +8,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "profile_rules")
 public class ProfileRuleEntity {
-
     @Id
     @Column(name = "id", nullable = false)
     public UUID id;

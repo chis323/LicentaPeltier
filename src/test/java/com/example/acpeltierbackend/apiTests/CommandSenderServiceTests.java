@@ -28,7 +28,13 @@ class CommandSenderServiceTests {
 
         CommandSenderService service = new CommandSenderService(reg);
 
-        assertFalse(service.sendCommand(new CommandRequestDto()));
+        CommandRequestDto req = new CommandRequestDto(
+                false,
+                0,
+                0,
+                false
+        );
+        assertFalse(service.sendCommand(req));
         verify(reg, never()).getSession();
     }
 
@@ -37,11 +43,12 @@ class CommandSenderServiceTests {
         when(reg.online()).thenReturn(true);
         when(reg.getSession()).thenReturn(session);
 
-        CommandRequestDto req = new CommandRequestDto();
-        req.coldFanPwm = 25;
-        req.hotFanPwm = 75;
-        req.peltierOn = true;
-        req.swingOn = false;
+        CommandRequestDto req = new CommandRequestDto(
+                false,
+                25,
+                75,
+                true
+        );
 
         CommandSenderService service = new CommandSenderService(reg);
 

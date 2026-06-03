@@ -55,11 +55,12 @@ class ApiControllerTests {
 
         ApiController controller = new ApiController(reg);
 
-        CommandRequestDto req = new CommandRequestDto();
-        req.coldFanPwm = 50;
-        req.hotFanPwm = 60;
-        req.peltierOn = true;
-        req.swingOn = false;
+        CommandRequestDto req = new CommandRequestDto(
+                false,
+                50,
+                60,
+                true
+        );
 
         var response = controller.command(req);
 
@@ -75,11 +76,12 @@ class ApiControllerTests {
 
         ApiController controller = new ApiController(reg);
 
-        CommandRequestDto req = new CommandRequestDto();
-        req.coldFanPwm = 50;
-        req.hotFanPwm = 60;
-        req.peltierOn = true;
-        req.swingOn = false;
+        CommandRequestDto req = new CommandRequestDto(
+                false,
+                50,
+                60,
+                true
+        );
 
         var response = controller.command(req);
 
