@@ -31,9 +31,9 @@ public class ProfileDtos {
     ){
     }
 
-    public record CreateProfileReq(String name) {
+    public record CreateNewProfileRequest(String name) {
     }
 
-    public record EnableReq(boolean enabled) {
+    public record EnableProfileRequest(boolean enabled) {
     }
 }

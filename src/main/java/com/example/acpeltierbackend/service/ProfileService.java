@@ -14,7 +14,6 @@ import java.util.*;
 public class ProfileService {
 
     private static final int MAX_PROFILES = 3;
-
     private final ProfileRepo repo;
 
     public ProfileService(ProfileRepo repo) {

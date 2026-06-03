@@ -15,9 +15,7 @@ public class ProfileSchedulerService {
 
     private final ProfileService profileService;
     private final CommandSenderService sender;
-
     private CommandRequestDto lastApplied = null;
-
     private final ZoneId zone = ZoneId.of("Europe/Bucharest");
 
     public ProfileSchedulerService(ProfileService profileService, CommandSenderService sender) {

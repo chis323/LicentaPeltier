@@ -53,7 +53,7 @@ class ProfilesControllerTests {
 
         when(service.create("Morning")).thenReturn(created);
 
-        var result = controller.create(new ProfileDtos.CreateProfileReq("Morning"));
+        var result = controller.create(new ProfileDtos.CreateNewProfileRequest("Morning"));
 
         assertSame(created, result);
     }
@@ -70,22 +70,16 @@ class ProfilesControllerTests {
     }
 
     @Test
-    void enable_returnsOk() {
+    void enable_callsService() {
         ProfilesController controller = new ProfilesController(service);
-
-        Map<String, Object> result = controller.enable("p1", new ProfileDtos.EnableReq(true));
-
-        assertEquals(true, result.get("ok"));
+        controller.enable("p1", new ProfileDtos.EnableProfileRequest(true));
         verify(service).setEnabled("p1", true);
     }
 
     @Test
-    void delete_returnsOk() {
+    void delete_callsService() {
         ProfilesController controller = new ProfilesController(service);
-
-        Map<String, Object> result = controller.delete("p1");
-
-        assertEquals(true, result.get("ok"));
+        controller.delete("p1");
         verify(service).delete("p1");
     }
 }

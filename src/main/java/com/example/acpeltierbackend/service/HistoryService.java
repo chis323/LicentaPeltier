@@ -18,7 +18,6 @@ public class HistoryService {
     public HistoryService(DailyAmbientStatRepo repo) {
         this.repo = repo;
     }
-
     private LocalDate todayUtc() {
         return LocalDate.now(ZoneOffset.UTC);
     }

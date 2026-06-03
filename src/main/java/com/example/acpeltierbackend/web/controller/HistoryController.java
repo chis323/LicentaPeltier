@@ -1,12 +1,10 @@
 package com.example.acpeltierbackend.web.controller;
 
 import com.example.acpeltierbackend.service.HistoryService;
+import com.example.acpeltierbackend.web.dto.DailyHistoryDto;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,18 +18,16 @@ public class HistoryController {
     }
 
     @GetMapping("/api/history/daily")
-    public Map<String, Object> daily(@RequestParam(name = "days", defaultValue = "7") int days) {
-        var rows = history.getLastDays(days);
-        DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
+    public Map<String, List<DailyHistoryDto>> daily() {
+        List<DailyHistoryDto> rows = history.getLastDays(7)
+                .stream()
+                .map(row -> new DailyHistoryDto(
+                        row.statusDay,
+                        row.minAmbientTempC,
+                        row.maxAmbientTempC
+                ))
+                .toList();
 
-        List<Map<String, Object>> out = rows.stream().map(r -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("day", (r.statusDay == null ? null : r.statusDay.format(fmt)));
-            m.put("minAmbientTempC", r.minAmbientTempC);
-            m.put("maxAmbientTempC", r.maxAmbientTempC);
-            return m;
-        }).toList();
-
-        return Map.of("days", out);
+        return Map.of("days", rows);
     }
 }

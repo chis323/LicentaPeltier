@@ -22,19 +22,17 @@ public class ApiController {
     @PostMapping("/api/command")
     public ResponseEntity<?> command(@Valid @RequestBody CommandRequestDto req) throws Exception {
         if (!reg.online()) {
-            return ResponseEntity.status(409).body(java.util.Map.of("error", "DEVICE_OFFLINE"));
+            return ResponseEntity
+                    .status(409)
+                    .body(java.util.Map.of("error", "DEVICE_OFFLINE"));
         }
-
         var payload = om.valueToTree(req);
-
         var msg = om.createObjectNode();
         msg.put("type", "command");
         msg.set("payload", payload);
-
         reg.getSession().sendMessage(new TextMessage(om.writeValueAsString(msg)));
         return ResponseEntity.ok(java.util.Map.of("sent", true));
     }
-
 
     @GetMapping("/api/status")
     public StatusResponseDto status() {
