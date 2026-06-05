@@ -46,9 +46,6 @@ class ApiControllerTests {
                 null,
                 null,
                 null,
-                null,
-                null,
-                null,
                 null
         );
         when(reg.getLatestStatus()).thenReturn(status);

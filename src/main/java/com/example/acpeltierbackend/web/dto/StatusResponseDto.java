@@ -5,12 +5,9 @@ public record StatusResponseDto(
         Long ts,
         Double ambientTempC,
         Double humidityPct,
-        Double hotSideTempC,
-        Double coldSideTempC,
         Integer coldFanPwm,
         Integer hotFanPwm,
         Boolean peltierOn,
-        Boolean swingOn,
-        String fault
+        Boolean swingOn
 ) {
 }

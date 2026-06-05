@@ -50,13 +50,10 @@ public class DeviceWsHandler extends TextWebSocketHandler {
                         System.currentTimeMillis(),
                         t.ambientTempC(),
                         t.humidityPct(),
-                        t.hotSideTempC(),
-                        t.coldSideTempC(),
                         t.coldFanPwm(),
                         t.hotFanPwm(),
                         t.peltierOn(),
-                        t.swingOn(),
-                        t.fault()
+                        t.swingOn()
                 );
             }
             reg.updateFromTelemetry(t);
