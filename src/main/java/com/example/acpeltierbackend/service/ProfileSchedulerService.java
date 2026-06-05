@@ -15,9 +15,7 @@ public class ProfileSchedulerService {
 
     private final ProfileService profileService;
     private final CommandSenderService sender;
-
     private CommandRequestDto lastApplied = null;
-
     private final ZoneId zone = ZoneId.of("Europe/Bucharest");
 
     public ProfileSchedulerService(ProfileService profileService, CommandSenderService sender) {
@@ -35,48 +33,62 @@ public class ProfileSchedulerService {
             }
 
             ProfileEntity p = enabledOpt.get();
-
             ZonedDateTime now = ZonedDateTime.now(zone);
-
-            ProfileRuleEntity match = p.rules.stream().filter(r -> matchesRule(now, r)).max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime)).orElse(null);
+            ProfileRuleEntity match = p.rules.stream()
+                    .filter(r -> matchesRule(now, r))
+                    .max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime))
+                    .orElse(null);
 
             if (match == null) {
                 applyIdleIfNeeded("no matching block");
                 return;
             }
 
-            CommandRequestDto cmd = new CommandRequestDto();
-            cmd.coldFanPwm = match.coldFanPwm;
-            cmd.hotFanPwm = match.hotFanPwm;
-            cmd.peltierOn = match.peltierOn;
-            cmd.swingOn = match.swingOn;
+            CommandRequestDto cmd = new CommandRequestDto(
+                    match.swingOn,
+                    match.coldFanPwm,
+                    match.hotFanPwm,
+                    match.peltierOn
+            );
 
-            if (same(cmd, lastApplied)) {
+            if (cmd.equals(lastApplied)) {
                 return;
             }
 
             boolean ok = sender.sendCommand(cmd);
             if (ok) {
                 lastApplied = cmd;
-                System.out.printf("[SCHED] applied profile '%s' block: DOW=%d %s-%s -> cold=%d hot=%d peltier=%s swing=%s (zone=%s now=%s)%n", p.name, match.dayOfWeek, match.startTime, match.endTime, cmd.coldFanPwm, cmd.hotFanPwm, cmd.peltierOn, cmd.swingOn, zone, now);
+                System.out.printf("[SCHED] applied profile '%s' block: DOW=%d %s-%s -> cold=%d hot=%d peltier=%s swing=%s (zone=%s now=%s)%n",
+                        p.name,
+                        match.dayOfWeek,
+                        match.startTime,
+                        match.endTime,
+                        cmd.coldFanPwm(),
+                        cmd.hotFanPwm(),
+                        cmd.peltierOn(),
+                        cmd.swingOn(),
+                        zone,
+                        now);
             } else {
                 System.out.println("[SCHED] device offline, cannot send command");
             }
 
         } catch (Exception e) {
             System.out.println("[SCHED] ERROR: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
     private void applyIdleIfNeeded(String reason) {
-        CommandRequestDto idle = new CommandRequestDto();
-        idle.coldFanPwm = 0;
-        idle.hotFanPwm = 0;
-        idle.peltierOn = false;
-        idle.swingOn = false;
+        CommandRequestDto idle = new CommandRequestDto(
+                false,
+                0,
+                0,
+                false
+        );
 
-        if (same(idle, lastApplied)) return;
+        if (idle.equals(lastApplied)) {
+            return;
+        }
 
         boolean ok = sender.sendCommand(idle);
         if (ok) {
@@ -107,17 +119,5 @@ public class ProfileSchedulerService {
         }
 
         return r.startTime.equals(r.endTime) && r.dayOfWeek == dow;
-    }
-
-    private static boolean same(CommandRequestDto a, CommandRequestDto b) {
-        if (a == b) return true;
-        if (a == null || b == null) return false;
-        return eq(a.coldFanPwm, b.coldFanPwm) && eq(a.hotFanPwm, b.hotFanPwm) && eq(a.peltierOn, b.peltierOn) && eq(a.swingOn, b.swingOn);
-    }
-
-    private static boolean eq(Object x, Object y) {
-        if (x == y) return true;
-        if (x == null || y == null) return false;
-        return x.equals(y);
     }
 }

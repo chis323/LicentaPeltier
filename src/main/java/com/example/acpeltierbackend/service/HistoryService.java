@@ -18,13 +18,12 @@ public class HistoryService {
     public HistoryService(DailyAmbientStatRepo repo) {
         this.repo = repo;
     }
-
     private LocalDate todayUtc() {
         return LocalDate.now(ZoneOffset.UTC);
     }
 
     @Transactional
-    public void recordAmbientSample(Double ambientTempC, long tsMillis) {
+    public void recordAmbientSample(Double ambientTempC) {
         if (ambientTempC == null) return;
 
         LocalDate day = todayUtc();
@@ -56,25 +55,27 @@ public class HistoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<DailyAmbientStatsEntity> getLastDays(int days) {
-        int n = Math.max(1, Math.min(days, 30));
-        LocalDate end = todayUtc();
-        LocalDate start = end.minusDays(n - 1L);
+    public List<DailyAmbientStatsEntity> getLast7Days() {
+        LocalDate start = todayUtc().minusDays(6);
 
-        List<DailyAmbientStatsEntity> out = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            LocalDate d = start.plusDays(i);
+        List<DailyAmbientStatsEntity> rows = new ArrayList<>();
 
-            DailyAmbientStatsEntity row = repo.findById(d).orElseGet(() -> {
-                DailyAmbientStatsEntity empty = new DailyAmbientStatsEntity();
-                empty.statusDay = d;
-                empty.minAmbientTempC = null;
-                empty.maxAmbientTempC = null;
-                return empty;
-            });
+        for (int i = 0; i < 7; i++) {
+            LocalDate day = start.plusDays(i);
 
-            out.add(row);
+            DailyAmbientStatsEntity row = repo.findById(day)
+                    .orElseGet(() -> emptyRow(day));
+
+            rows.add(row);
         }
-        return out;
+        return rows;
+    }
+
+    private static DailyAmbientStatsEntity emptyRow(LocalDate day) {
+        DailyAmbientStatsEntity row = new DailyAmbientStatsEntity();
+        row.statusDay = day;
+        row.minAmbientTempC = null;
+        row.maxAmbientTempC = null;
+        return row;
     }
 }

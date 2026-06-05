@@ -1,6 +1,7 @@
 package com.example.acpeltierbackend.service;
 
 import com.example.acpeltierbackend.security.DeviceRegistry;
+import com.example.acpeltierbackend.web.dto.CommandRequestDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
@@ -15,10 +16,10 @@ public class CommandSenderService {
         this.reg = reg;
     }
 
-    public boolean sendCommand(Object payloadPojo) {
+    public boolean sendCommand(CommandRequestDto command) {
         if (!reg.online()) return false;
         try {
-            var payload = om.valueToTree(payloadPojo);
+            var payload = om.valueToTree(command);
             var msg = om.createObjectNode();
             msg.put("type", "command");
             msg.set("payload", payload);

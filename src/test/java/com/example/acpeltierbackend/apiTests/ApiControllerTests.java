@@ -38,14 +38,21 @@ class ApiControllerTests {
 
     @Test
     void status_returnsLatestStatus() {
-        StatusResponseDto status = new StatusResponseDto();
-        status.deviceOnline = true;
-        status.ambientTempC = 22.5;
-
+        StatusResponseDto status = new StatusResponseDto(
+                true,
+                null,
+                22.5,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
         when(reg.getLatestStatus()).thenReturn(status);
-
         ApiController controller = new ApiController(reg);
-
         assertSame(status, controller.status());
     }
 
@@ -55,11 +62,12 @@ class ApiControllerTests {
 
         ApiController controller = new ApiController(reg);
 
-        CommandRequestDto req = new CommandRequestDto();
-        req.coldFanPwm = 50;
-        req.hotFanPwm = 60;
-        req.peltierOn = true;
-        req.swingOn = false;
+        CommandRequestDto req = new CommandRequestDto(
+                false,
+                50,
+                60,
+                true
+        );
 
         var response = controller.command(req);
 
@@ -75,11 +83,12 @@ class ApiControllerTests {
 
         ApiController controller = new ApiController(reg);
 
-        CommandRequestDto req = new CommandRequestDto();
-        req.coldFanPwm = 50;
-        req.hotFanPwm = 60;
-        req.peltierOn = true;
-        req.swingOn = false;
+        CommandRequestDto req = new CommandRequestDto(
+                false,
+                50,
+                60,
+                true
+        );
 
         var response = controller.command(req);
 

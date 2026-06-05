@@ -1,19 +1,16 @@
 package com.example.acpeltierbackend.service;
 
-import com.example.acpeltierbackend.web.dto.ProfileDtos;
 import com.example.acpeltierbackend.entity.ProfileEntity;
+import com.example.acpeltierbackend.mapper.ProfileMapper;
 import com.example.acpeltierbackend.repository.ProfileRepo;
-import com.example.acpeltierbackend.entity.ProfileRuleEntity;
+import com.example.acpeltierbackend.web.dto.ProfileDtos;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalTime;
 import java.util.*;
 
 @Service
 public class ProfileService {
-
-    private static final int MAX_PROFILES = 3;
 
     private final ProfileRepo repo;
 
@@ -23,153 +20,113 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public List<ProfileDtos.ProfileSummary> listSummaries() {
-        return repo.findAll().stream().sorted(Comparator.comparing(p -> safeLower(p.name))).map(p -> new ProfileDtos.ProfileSummary(p.id.toString(), p.name, p.enabled)).toList();
+        return repo.findAll()
+                .stream()
+                .sorted(Comparator.comparing(profile -> profile.name, String.CASE_INSENSITIVE_ORDER))
+                .map(ProfileMapper::toSummary)
+                .toList();
     }
 
     @Transactional
     public ProfileDtos.Profile create(String name) {
-
-        long count = repo.count();
-        if (count >= MAX_PROFILES) {
-            throw new IllegalStateException("Maximum " + MAX_PROFILES + " profiles allowed");
+        if (repo.count() >= 3) {
+            throw new IllegalStateException("Maximum " + 3 + " profiles allowed");
         }
-
-        ProfileEntity p = new ProfileEntity();
-        p.id = UUID.randomUUID();
-        p.name = normalizeName(name);
-        p.enabled = false;
-        p.rules = new ArrayList<>();
-
-        return toDto(repo.save(p));
+        ProfileEntity profile = new ProfileEntity();
+        profile.id = UUID.randomUUID();
+        profile.name = normalizeName(name);
+        profile.enabled = false;
+        profile.rules = new ArrayList<>();
+        return ProfileMapper.toProfile(repo.save(profile));
     }
 
     @Transactional(readOnly = true)
     public ProfileDtos.Profile get(String id) {
-        ProfileEntity p = repo.findById(parseUuid(id)).orElseThrow(() -> new NoSuchElementException("Profile not found"));
-
-        p.rules.size();
-        return toDto(p);
+        ProfileEntity profile = findProfile(id);
+        return ProfileMapper.toProfile(profile);
     }
 
     @Transactional
     public ProfileDtos.Profile save(String id, ProfileDtos.Profile incoming) {
-        ProfileEntity p = repo.findById(parseUuid(id)).orElseThrow(() -> new NoSuchElementException("Profile not found"));
-
+        ProfileEntity profile = findProfile(id);
         if (incoming.name() != null && !incoming.name().isBlank()) {
-            p.name = incoming.name().trim();
+            profile.name = incoming.name().trim();
         }
-
-        p.enabled = incoming.enabled();
-        p.rules.clear();
-
+        profile.enabled = incoming.enabled();
+        profile.rules.clear();
         if (incoming.rules() != null) {
-            for (ProfileDtos.Rule r : incoming.rules()) {
-                ProfileRuleEntity e = new ProfileRuleEntity();
-                e.id = (r.id() != null && !r.id().isBlank()) ? parseUuid(r.id()) : UUID.randomUUID();
-                e.profile = p;
-                e.dayOfWeek = clamp(r.dayOfWeek(), 1, 7);
-                e.startTime = parseTime(r.start(), LocalTime.of(8, 0));
-                e.endTime = parseTime(r.end(), LocalTime.of(9, 0));
-                e.coldFanPwm = clamp(r.coldFanPwm(), 0, 100);
-                e.hotFanPwm = clamp(r.hotFanPwm(), 0, 100);
-                e.peltierOn = r.peltierOn();
-                e.swingOn = r.swingOn();
-                p.rules.add(e);
-            }
+            incoming.rules()
+                    .stream()
+                    .map(rule -> ProfileMapper.toEntity(rule, profile))
+                    .forEach(profile.rules::add);
         }
-
-        return toDto(repo.save(p));
+        return ProfileMapper.toProfile(repo.save(profile));
     }
 
     @Transactional
     public void delete(String id) {
-        UUID pid = parseUuid(id);
-
-        repo.findById(pid).ifPresent(p -> {
-            if (p.enabled) {
-                p.enabled = false;
-                repo.save(p);
+        UUID profileId = parseUuid(id);
+        repo.findById(profileId).ifPresent(profile -> {
+            if (profile.enabled) {
+                profile.enabled = false;
+                repo.save(profile);
             }
         });
-
-        repo.deleteById(pid);
+        repo.deleteById(profileId);
     }
 
     @Transactional
     public void setEnabled(String id, boolean enabled) {
-        UUID pid = parseUuid(id);
-
+        UUID profileId = parseUuid(id);
         if (!enabled) {
-            ProfileEntity p = repo.findById(pid).orElseThrow(() -> new NoSuchElementException("Profile not found"));
-            if (p.enabled) {
-                p.enabled = false;
-                repo.save(p);
-            }
+            ProfileEntity profile = repo.findById(profileId)
+                    .orElseThrow(() -> new NoSuchElementException("Profile not found"));
+            profile.enabled = false;
+            repo.save(profile);
             return;
         }
 
-        List<ProfileEntity> all = repo.findAll();
+        List<ProfileEntity> profiles = repo.findAll();
         boolean found = false;
-
-        for (ProfileEntity p : all) {
-            boolean shouldEnable = p.id.equals(pid);
-            if (shouldEnable) found = true;
-
-            if (p.enabled != shouldEnable) {
-                p.enabled = shouldEnable;
+        for (ProfileEntity profile : profiles) {
+            boolean shouldEnable = profile.id.equals(profileId);
+            if (shouldEnable) {
+                found = true;
             }
+            profile.enabled = shouldEnable;
         }
-
         if (!found) {
             throw new NoSuchElementException("Profile not found");
         }
-
-        repo.saveAll(all);
+        repo.saveAll(profiles);
     }
 
     @Transactional(readOnly = true)
     public Optional<ProfileEntity> getEnabledProfileEntity() {
-        List<ProfileEntity> enabled = repo.findByEnabledTrue();
-        if (enabled.isEmpty()) return Optional.empty();
-        return Optional.of(enabled.get(0));
-    }
-
-
-    private static UUID parseUuid(String s) {
-        try {
-            return UUID.fromString(s);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid UUID: " + s);
+        List<ProfileEntity> enabledProfiles = repo.findByEnabledTrue();
+        if (enabledProfiles.isEmpty()) {
+            return Optional.empty();
         }
+        return Optional.of(enabledProfiles.get(0));
     }
 
-    private static int clamp(Integer v, int lo, int hi) {
-        if (v == null) return lo;
-        return Math.max(lo, Math.min(hi, v));
+    private ProfileEntity findProfile(String id) {
+        return repo.findById(parseUuid(id))
+                .orElseThrow(() -> new NoSuchElementException("Profile not found"));
     }
 
-    private static LocalTime parseTime(String s, LocalTime fallback) {
-        if (s == null) return fallback;
+    private static UUID parseUuid(String value) {
         try {
-            return LocalTime.parse(s);
-        } catch (Exception ignore) {
-            return fallback;
+            return UUID.fromString(value);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid UUID: " + value);
         }
     }
 
     private static String normalizeName(String name) {
-        if (name == null || name.isBlank()) return "New Profile";
+        if (name == null || name.isBlank()) {
+            return "New Profile";
+        }
         return name.trim();
-    }
-
-    private static String safeLower(String s) {
-        if (s == null) return "";
-        return s.toLowerCase(Locale.ROOT);
-    }
-
-    private static ProfileDtos.Profile toDto(ProfileEntity p) {
-        List<ProfileDtos.Rule> rules = p.rules.stream().sorted(Comparator.comparingInt((ProfileRuleEntity r) -> r.dayOfWeek).thenComparing(r -> r.startTime)).map(r -> new ProfileDtos.Rule(r.id.toString(), r.dayOfWeek, r.startTime.toString(), r.endTime.toString(), r.coldFanPwm, r.hotFanPwm, r.peltierOn, r.swingOn)).toList();
-
-        return new ProfileDtos.Profile(p.id.toString(), p.name, p.enabled, rules);
     }
 }

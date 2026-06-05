@@ -10,7 +10,9 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class DeviceRegistry {
     private final AtomicReference<WebSocketSession> deviceSession = new AtomicReference<>();
-    private final AtomicReference<StatusResponseDto> latestStatus = new AtomicReference<>(new StatusResponseDto());
+
+    private final AtomicReference<StatusResponseDto> latestStatus =
+            new AtomicReference<>(emptyStatus());
 
     public void setSession(WebSocketSession session) {
         deviceSession.set(session);
@@ -26,25 +28,60 @@ public class DeviceRegistry {
 
     public boolean online() {
         WebSocketSession s = deviceSession.get();
-        return s != null && s.isOpen();
+        if (s == null) {
+            return false;
+        }
+        return s.isOpen();
     }
 
     public StatusResponseDto getLatestStatus() {
         StatusResponseDto s = latestStatus.get();
-        s.deviceOnline = online();
-        return s;
+
+        return new StatusResponseDto(
+                online(),
+                s.ts(),
+                s.ambientTempC(),
+                s.humidityPct(),
+                s.hotSideTempC(),
+                s.coldSideTempC(),
+                s.coldFanPwm(),
+                s.hotFanPwm(),
+                s.peltierOn(),
+                s.swingOn(),
+                s.fault()
+        );
     }
 
     public void updateFromTelemetry(TelemetryFrameDto t) {
-        StatusResponseDto s = new StatusResponseDto();
-        s.deviceOnline = online();
-        s.ts = t.ts;
-        s.ambientTempC = t.ambientTempC;
-        s.humidityPct = t.humidityPct;
-        s.coldFanPwm = t.coldFanPwm;
-        s.hotFanPwm = t.hotFanPwm;
-        s.peltierOn = t.peltierOn;
-        s.swingOn = t.swingOn;
+        StatusResponseDto s = new StatusResponseDto(
+                online(),
+                t.ts(),
+                t.ambientTempC(),
+                t.humidityPct(),
+                t.hotSideTempC(),
+                t.coldSideTempC(),
+                t.coldFanPwm(),
+                t.hotFanPwm(),
+                t.peltierOn(),
+                t.swingOn(),
+                t.fault()
+        );
         latestStatus.set(s);
+    }
+
+    private static StatusResponseDto emptyStatus() {
+        return new StatusResponseDto(
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 }

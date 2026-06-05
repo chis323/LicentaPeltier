@@ -13,7 +13,6 @@ import java.util.Map;
 public class ProfilesController {
 
     private final ProfileService service;
-
     public ProfilesController(ProfileService service) {
         this.service = service;
     }
@@ -26,36 +25,28 @@ public class ProfilesController {
         return out;
     }
 
-
     @GetMapping("/{id}")
     public ProfileDtos.Profile get(@PathVariable String id) {
         return service.get(id);
     }
 
-
     @PostMapping
-    public ProfileDtos.Profile create(@RequestBody ProfileDtos.CreateProfileReq req) {
+    public ProfileDtos.Profile create(@RequestBody ProfileDtos.CreateNewProfileRequest req) {
         return service.create(req.name());
     }
 
-
     @PutMapping("/{id}")
     public ProfileDtos.Profile save(@PathVariable String id, @RequestBody ProfileDtos.Profile incoming) {
-
         return service.save(id, incoming);
     }
 
-
     @PostMapping("/{id}/enable")
-    public Map<String, Object> enable(@PathVariable String id, @RequestBody ProfileDtos.EnableReq req) {
+    public void enable(@PathVariable String id, @RequestBody ProfileDtos.EnableProfileRequest req) {
         service.setEnabled(id, req.enabled());
-        return Map.of("ok", true);
     }
 
-
     @DeleteMapping("/{id}")
-    public Map<String, Object> delete(@PathVariable String id) {
+    public void delete(@PathVariable String id) {
         service.delete(id);
-        return Map.of("ok", true);
     }
 }

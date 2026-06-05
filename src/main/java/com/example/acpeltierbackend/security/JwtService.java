@@ -24,16 +24,25 @@ public class JwtService {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + cfg.jwtExpirationMs);
 
-        return Jwts.builder().subject(username).issuedAt(now).expiration(expiry).signWith(key).compact();
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(key)
+                .compact();
     }
 
     public String validateAndGetUsername(String token) {
-        Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
 
         return claims.getSubject();
     }
 
-    private byte[] sha256(String value) {
+    private static byte[] sha256(String value) {
         try {
             return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
