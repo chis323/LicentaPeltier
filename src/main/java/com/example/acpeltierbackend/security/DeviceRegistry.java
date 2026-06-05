@@ -42,13 +42,10 @@ public class DeviceRegistry {
                 s.ts(),
                 s.ambientTempC(),
                 s.humidityPct(),
-                s.hotSideTempC(),
-                s.coldSideTempC(),
                 s.coldFanPwm(),
                 s.hotFanPwm(),
                 s.peltierOn(),
-                s.swingOn(),
-                s.fault()
+                s.swingOn()
         );
     }
 
@@ -58,13 +55,10 @@ public class DeviceRegistry {
                 t.ts(),
                 t.ambientTempC(),
                 t.humidityPct(),
-                t.hotSideTempC(),
-                t.coldSideTempC(),
                 t.coldFanPwm(),
                 t.hotFanPwm(),
                 t.peltierOn(),
-                t.swingOn(),
-                t.fault()
+                t.swingOn()
         );
         latestStatus.set(s);
     }
@@ -72,9 +66,6 @@ public class DeviceRegistry {
     private static StatusResponseDto emptyStatus() {
         return new StatusResponseDto(
                 false,
-                null,
-                null,
-                null,
                 null,
                 null,
                 null,
