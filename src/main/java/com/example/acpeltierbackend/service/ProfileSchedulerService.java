@@ -33,10 +33,11 @@ public class ProfileSchedulerService {
             }
 
             ProfileEntity p = enabledOpt.get();
-
             ZonedDateTime now = ZonedDateTime.now(zone);
-
-            ProfileRuleEntity match = p.rules.stream().filter(r -> matchesRule(now, r)).max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime)).orElse(null);
+            ProfileRuleEntity match = p.rules.stream()
+                    .filter(r -> matchesRule(now, r))
+                    .max(Comparator.comparing((ProfileRuleEntity r) -> r.startTime))
+                    .orElse(null);
 
             if (match == null) {
                 applyIdleIfNeeded("no matching block");
@@ -50,7 +51,7 @@ public class ProfileSchedulerService {
                     match.peltierOn
             );
 
-            if (same(cmd, lastApplied)) {
+            if (cmd.equals(lastApplied)) {
                 return;
             }
 
@@ -85,7 +86,9 @@ public class ProfileSchedulerService {
                 false
         );
 
-        if (same(idle, lastApplied)) return;
+        if (idle.equals(lastApplied)) {
+            return;
+        }
 
         boolean ok = sender.sendCommand(idle);
         if (ok) {
@@ -116,17 +119,5 @@ public class ProfileSchedulerService {
         }
 
         return r.startTime.equals(r.endTime) && r.dayOfWeek == dow;
-    }
-
-    private static boolean same(CommandRequestDto a, CommandRequestDto b) {
-        if (a == b) return true;
-        if (a == null || b == null) return false;
-        return eq(a.coldFanPwm(), b.coldFanPwm()) && eq(a.hotFanPwm(), b.hotFanPwm()) && eq(a.peltierOn(), b.peltierOn()) && eq(a.swingOn(), b.swingOn());
-    }
-
-    private static boolean eq(Object x, Object y) {
-        if (x == y) return true;
-        if (x == null || y == null) return false;
-        return x.equals(y);
     }
 }

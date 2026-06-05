@@ -30,7 +30,7 @@ class HistoryControllerTests {
         row.statusDay = LocalDate.of(2026, 4, 29);
         row.minAmbientTempC = 10.0;
         row.maxAmbientTempC = 20.0;
-        when(history.getLastDays(7)).thenReturn(List.of(row));
+        when(history.getLast7Days()).thenReturn(List.of(row));
         Map<String, List<DailyHistoryDto>> result = controller.daily();
         List<DailyHistoryDto> days = result.get("days");
         assertEquals(1, days.size());
@@ -47,7 +47,7 @@ class HistoryControllerTests {
         row.statusDay = null;
         row.minAmbientTempC = 5.0;
         row.maxAmbientTempC = 15.0;
-        when(history.getLastDays(7)).thenReturn(List.of(row));
+        when(history.getLast7Days()).thenReturn(List.of(row));
         Map<String, List<DailyHistoryDto>> result = controller.daily();
         List<DailyHistoryDto> days = result.get("days");
         assertNull(days.get(0).day());

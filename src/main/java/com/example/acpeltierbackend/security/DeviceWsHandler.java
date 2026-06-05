@@ -61,7 +61,7 @@ public class DeviceWsHandler extends TextWebSocketHandler {
             }
             reg.updateFromTelemetry(t);
             try {
-                history.recordAmbientSample(t.ambientTempC(), t.ts());
+                history.recordAmbientSample(t.ambientTempC());
             } catch (Exception e) {
                 System.out.println("[DB] history write failed: " + e.getMessage());
             }

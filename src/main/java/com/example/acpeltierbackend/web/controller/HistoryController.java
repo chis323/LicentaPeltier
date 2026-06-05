@@ -19,7 +19,7 @@ public class HistoryController {
 
     @GetMapping("/api/history/daily")
     public Map<String, List<DailyHistoryDto>> daily() {
-        List<DailyHistoryDto> rows = history.getLastDays(7)
+        List<DailyHistoryDto> rows = history.getLast7Days()
                 .stream()
                 .map(row -> new DailyHistoryDto(
                         row.statusDay,
@@ -27,7 +27,6 @@ public class HistoryController {
                         row.maxAmbientTempC
                 ))
                 .toList();
-
         return Map.of("days", rows);
     }
 }

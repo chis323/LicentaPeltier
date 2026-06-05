@@ -27,7 +27,7 @@ class HistoryServiceTests {
     void recordAmbientSample_whenNull_doesNothing() {
         HistoryService service = new HistoryService(repo);
 
-        service.recordAmbientSample(null, System.currentTimeMillis());
+        service.recordAmbientSample(null);
 
         verifyNoInteractions(repo);
     }
@@ -40,7 +40,7 @@ class HistoryServiceTests {
 
         HistoryService service = new HistoryService(repo);
 
-        service.recordAmbientSample(21.5, System.currentTimeMillis());
+        service.recordAmbientSample(21.5);
 
         verify(repo).save(argThat(row -> today.equals(row.statusDay) && row.minAmbientTempC.equals(21.5) && row.maxAmbientTempC.equals(21.5)));
     }
@@ -58,7 +58,7 @@ class HistoryServiceTests {
 
         HistoryService service = new HistoryService(repo);
 
-        service.recordAmbientSample(10.0, System.currentTimeMillis());
+        service.recordAmbientSample(10.0);
 
         assertEquals(10.0, existing.minAmbientTempC);
         assertEquals(30.0, existing.maxAmbientTempC);
@@ -86,14 +86,14 @@ class HistoryServiceTests {
     }
 
     @Test
-    void getLastDays_clampsDaysAndFillsMissingRows() {
+    void getLast7Days_fillsMissingRows() {
         when(repo.findById(any(LocalDate.class))).thenReturn(Optional.empty());
 
         HistoryService service = new HistoryService(repo);
 
-        List<DailyAmbientStatsEntity> rows = service.getLastDays(50);
+        List<DailyAmbientStatsEntity> rows = service.getLast7Days();
 
-        assertEquals(30, rows.size());
+        assertEquals(7, rows.size());
         assertNotNull(rows.get(0).statusDay);
         assertNull(rows.get(0).minAmbientTempC);
         assertNull(rows.get(0).maxAmbientTempC);
