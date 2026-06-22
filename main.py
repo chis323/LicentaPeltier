@@ -118,9 +118,10 @@ class Hardware:
             return None, None
 
     def fail_safe(self):
-    self.set_peltier(False)
-    self.set_swing(False)
-    self.set_cold_fan_pwm(0)
+        self.set_peltier(False)
+        self.set_swing(False)
+        self.set_cold_fan_pwm(0)
+        self.set_hot_an_pwm(0)
 
     def set_cold_fan_pwm(self, value: int):
         self.state["coldFanPwm"] = value
