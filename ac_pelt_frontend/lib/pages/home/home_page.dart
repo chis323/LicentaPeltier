@@ -1057,8 +1057,10 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 12),
               TextField(
                 controller: profileNameCtrl,
+                textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
                   labelText: "Profile name",
+                  helperText: "Press Done to save the name",
                   suffixIcon: autosaving
                       ? const Padding(
                           padding: EdgeInsets.all(12),
@@ -1070,10 +1072,18 @@ class _HomePageState extends State<HomePage> {
                         )
                       : null,
                 ),
-                onChanged: (v) {
+                onSubmitted: (v) {
                   if (syncingNameField) return;
-                  p.name = v;
-                  scheduleAutosave();
+
+                  final newName = v.trim();
+                  if (newName.isEmpty) {
+                    setProfileNameField(p.name);
+                    return;
+                  }
+
+                  p.name = newName;
+                  setProfileNameField(newName);
+                  autosaveNow();
                 },
               ),
               const SizedBox(height: 10),
