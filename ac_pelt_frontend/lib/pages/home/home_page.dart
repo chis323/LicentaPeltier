@@ -39,10 +39,63 @@ class _HomePageState extends State<HomePage> {
   Profile? selectedProfile;
   String? selectedProfileId;
 
+  String? get selectedProfileDropdownValue {
+    final id = selectedProfileId;
+    if (id == null) return null;
+
+    final matches = profiles.where((p) => p.id == id).length;
+    return matches == 1 ? id : null;
+  }
+
   double uiColdFan = 0;
   double uiHotFan = 0;
   bool uiSwing = false;
   bool uiPeltierOn = false;
+
+  int? pendingColdFanPwm;
+  int? pendingHotFanPwm;
+  bool? pendingSwingOn;
+  bool? pendingPeltierOn;
+  final Map<String, DateTime> pendingCommandDeadlines = {};
+
+  static const pendingCommandTimeout = Duration(seconds: 5);
+
+  bool isCommandPending(String field) {
+    final deadline = pendingCommandDeadlines[field];
+    if (deadline == null) return false;
+
+    final expired = DateTime.now().isAfter(deadline);
+    if (expired) {
+      pendingCommandDeadlines.remove(field);
+      if (field == "coldFanPwm") pendingColdFanPwm = null;
+      if (field == "hotFanPwm") pendingHotFanPwm = null;
+      if (field == "swingOn") pendingSwingOn = null;
+      if (field == "peltierOn") pendingPeltierOn = null;
+      return false;
+    }
+
+    return true;
+  }
+
+  void markCommandPending(String field) {
+    pendingCommandDeadlines[field] = DateTime.now().add(pendingCommandTimeout);
+  }
+
+  void clearCommandPending(String field) {
+    pendingCommandDeadlines.remove(field);
+    if (field == "coldFanPwm") pendingColdFanPwm = null;
+    if (field == "hotFanPwm") pendingHotFanPwm = null;
+    if (field == "swingOn") pendingSwingOn = null;
+    if (field == "peltierOn") pendingPeltierOn = null;
+  }
+
+  void clearAllPendingCommands() {
+    pendingCommandDeadlines.clear();
+    pendingColdFanPwm = null;
+    pendingHotFanPwm = null;
+    pendingSwingOn = null;
+    pendingPeltierOn = null;
+  }
 
   final TextEditingController profileNameCtrl = TextEditingController();
   bool syncingNameField = false;
@@ -92,15 +145,44 @@ class _HomePageState extends State<HomePage> {
         error = null;
         device.updateFromJson(json);
 
-        if (!profileControlsDevice) {
+        if (profileControlsDevice) {
+          clearAllPendingCommands();
+        } else {
           if (device.coldFanPwm != null) {
-            uiColdFan = device.coldFanPwm!.toDouble();
+            if (pendingColdFanPwm == device.coldFanPwm) {
+              clearCommandPending("coldFanPwm");
+            }
+            if (!isCommandPending("coldFanPwm")) {
+              uiColdFan = device.coldFanPwm!.toDouble();
+            }
           }
+
           if (device.hotFanPwm != null) {
-            uiHotFan = device.hotFanPwm!.toDouble();
+            if (pendingHotFanPwm == device.hotFanPwm) {
+              clearCommandPending("hotFanPwm");
+            }
+            if (!isCommandPending("hotFanPwm")) {
+              uiHotFan = device.hotFanPwm!.toDouble();
+            }
           }
-          if (device.swingOn != null) uiSwing = device.swingOn!;
-          if (device.peltierOn != null) uiPeltierOn = device.peltierOn!;
+
+          if (device.swingOn != null) {
+            if (pendingSwingOn == device.swingOn) {
+              clearCommandPending("swingOn");
+            }
+            if (!isCommandPending("swingOn")) {
+              uiSwing = device.swingOn!;
+            }
+          }
+
+          if (device.peltierOn != null) {
+            if (pendingPeltierOn == device.peltierOn) {
+              clearCommandPending("peltierOn");
+            }
+            if (!isCommandPending("peltierOn")) {
+              uiPeltierOn = device.peltierOn!;
+            }
+          }
         }
       });
     } catch (e) {
@@ -239,33 +321,77 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> sendSwing(bool on) async {
     if (profileControlsDevice) return showLockedToast();
-    setState(() => uiSwing = on);
+
+    setState(() {
+      pendingSwingOn = on;
+      markCommandPending("swingOn");
+      uiSwing = on;
+    });
 
     try {
       await api.sendCommand({"swingOn": on});
     } catch (e) {
-      if (mounted) setState(() => error = e.toString());
+      if (!mounted) return;
+
+      setState(() {
+        clearCommandPending("swingOn");
+        error = e.toString();
+      });
+
+      pollStatus();
     }
   }
 
   Future<void> sendPeltier(bool on) async {
     if (profileControlsDevice) return showLockedToast();
-    setState(() => uiPeltierOn = on);
+
+    setState(() {
+      pendingPeltierOn = on;
+      markCommandPending("peltierOn");
+      uiPeltierOn = on;
+    });
 
     try {
       await api.sendCommand({"peltierOn": on});
     } catch (e) {
-      if (mounted) setState(() => error = e.toString());
+      if (!mounted) return;
+
+      setState(() {
+        clearCommandPending("peltierOn");
+        error = e.toString();
+      });
+
+      pollStatus();
     }
   }
 
   Future<void> sendSlider(String field, int value) async {
     if (profileControlsDevice) return showLockedToast();
 
+    setState(() {
+      if (field == "coldFanPwm") {
+        pendingColdFanPwm = value;
+        markCommandPending("coldFanPwm");
+        uiColdFan = value.toDouble();
+      }
+      if (field == "hotFanPwm") {
+        pendingHotFanPwm = value;
+        markCommandPending("hotFanPwm");
+        uiHotFan = value.toDouble();
+      }
+    });
+
     try {
       await api.sendCommand({field: value});
     } catch (e) {
-      if (mounted) setState(() => error = e.toString());
+      if (!mounted) return;
+
+      setState(() {
+        clearCommandPending(field);
+        error = e.toString();
+      });
+
+      pollStatus();
     }
   }
 
@@ -339,6 +465,14 @@ class _HomePageState extends State<HomePage> {
 
       if (!mounted) return;
       setState(() {
+        profiles = [
+          ...profiles.where((p) => p.id != full.id),
+          ProfileSummary(
+            id: full.id,
+            name: full.name,
+            enabled: full.enabled,
+          ),
+        ];
         selectedProfileId = full.id;
         selectedProfile = full;
       });
@@ -876,7 +1010,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: selectedProfileId,
+                    value: selectedProfileDropdownValue,
                     decoration: const InputDecoration(labelText: "Profile"),
                     items: profiles
                         .map(
@@ -1078,8 +1212,13 @@ class _HomePageState extends State<HomePage> {
             sliderRow(
               title: "Cold fan",
               value: uiColdFan,
-              onChanged:
-                  slidersEnabled ? (v) => setState(() => uiColdFan = v) : null,
+              onChanged: slidersEnabled
+                  ? (v) => setState(() {
+                        uiColdFan = v;
+                        pendingColdFanPwm = v.round();
+                        markCommandPending("coldFanPwm");
+                      })
+                  : null,
               onChangeEnd: slidersEnabled
                   ? (v) => sendSlider("coldFanPwm", v.round())
                   : null,
@@ -1087,8 +1226,13 @@ class _HomePageState extends State<HomePage> {
             sliderRow(
               title: "Hot fan",
               value: uiHotFan,
-              onChanged:
-                  slidersEnabled ? (v) => setState(() => uiHotFan = v) : null,
+              onChanged: slidersEnabled
+                  ? (v) => setState(() {
+                        uiHotFan = v;
+                        pendingHotFanPwm = v.round();
+                        markCommandPending("hotFanPwm");
+                      })
+                  : null,
               onChangeEnd: slidersEnabled
                   ? (v) => sendSlider("hotFanPwm", v.round())
                   : null,
