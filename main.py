@@ -57,10 +57,6 @@ def disable_servo_pwm():
         write(SERVO_PWM / "enable", 0)
     except Exception:
         pass
-def fail_safe(self):
-    self.set_peltier(False)
-    self.set_swing(False)
-    self.set_cold_fan_pwm(0)
 
 class Hardware:
     def __init__(self):
@@ -120,6 +116,12 @@ class Hardware:
             print("[HW] DHT error:", repr(e), "-> reinit")
             await self.init_dht()
             return None, None
+
+    def fail_safe(self):
+        self.set_peltier(False)
+        self.set_swing(False)
+        self.set_cold_fan_pwm(0)
+        self.set_hot_fan_pwm(0)
 
     def set_cold_fan_pwm(self, value: int):
         self.state["coldFanPwm"] = value
