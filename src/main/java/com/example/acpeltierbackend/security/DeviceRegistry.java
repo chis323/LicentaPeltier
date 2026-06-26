@@ -22,8 +22,8 @@ public class DeviceRegistry {
         return deviceSession.get();
     }
 
-    public void clearSession() {
-        deviceSession.set(null);
+    public void clearSession(WebSocketSession session) {
+        deviceSession.compareAndSet(session, null);
     }
 
     public boolean online() {

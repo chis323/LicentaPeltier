@@ -72,7 +72,8 @@ public class DeviceWsHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) {
-        reg.clearSession();
+        System.out.println("[WS] Device disconnected: " + session.getId() + " status=" + status);
+        reg.clearSession(session);
     }
 
     private Optional<String> getDeviceKey(URI uri) {
