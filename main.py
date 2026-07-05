@@ -67,7 +67,7 @@ class Hardware:
         self.dht = None
         self.dht_ready = False
         self.servo_ok = False
-        self.swing_task: asyncio.Task | None = None
+        self.swing_task = None
         self.state = {
             "swingOn": False,
             "coldFanPwm": 0,
@@ -76,20 +76,13 @@ class Hardware:
         }
 
     async def async_init(self):
-        try:
-            await self.init_servo()
-        except PermissionError:
-            print("[HW] Servo permission denied. Run with sudo.")
-        except Exception as e:
-            print("[HW] Servo init failed:", repr(e))
+        await self.init_servo()
         await self.init_dht()
 
     async def init_servo(self):
         if not SERVO_PWM.exists():
             write(PWM_CHIP / "export", SERVO_CHANNEL)
             await asyncio.sleep(0.1)
-        if not SERVO_PWM.exists():
-            raise RuntimeError(f"{SERVO_PWM} missing after export")
         write(SERVO_PWM / "enable", 0)
         write(SERVO_PWM / "period", SERVO_PERIOD)
         write(SERVO_PWM / "duty_cycle", SERVO_MID)
@@ -99,49 +92,35 @@ class Hardware:
     def set_servo_ns(self, duty_ns: int):
         if not self.servo_ok:
             return
-        duty_ns = max(0, min(SERVO_PERIOD, int(duty_ns)))
         write(SERVO_PWM / "duty_cycle", duty_ns)
 
     def disable_servo(self):
-        try:
-            write(SERVO_PWM / "enable", 0)
-        except Exception:
-            pass
+        write(SERVO_PWM / "enable", 0)
 
     async def init_dht(self):
         self.close_dht()
-        try:
-            print("[HW] Initializing DHT22 on GPIO4...")
-            self.dht = adafruit_dht.DHT22(
-                DHT_PIN,
-                use_pulseio=False,
-            )
-            await asyncio.sleep(2)
-            self.dht_ready = True
-        except Exception as e:
-            print("[HW] DHT init failed:", repr(e))
-            self.dht = None
-            self.dht_ready = False
+        print("Initializing DHT22 on GPIO4")
+        self.dht = adafruit_dht.DHT22(
+            DHT_PIN,
+            use_pulseio=False,
+        )
+        await asyncio.sleep(2)
+        self.dht_ready = True
 
     def close_dht(self):
         self.dht_ready = False
-        try:
-            if self.dht:
-                self.dht.exit()
-        except Exception:
-            pass
+        if self.dht:
+            self.dht.exit()
         self.dht = None
 
     async def read_dht22(self):
-        if not self.dht or not self.dht_ready:
+        if self.dht is None or not self.dht_ready:
             return None, None
         try:
-            return self.dht.temperature, self.dht.humidity
+            temperature = self.dht.temperature
+            humidity = self.dht.humidity
+            return temperature, humidity
         except RuntimeError:
-            return None, None
-        except Exception as e:
-            print("[HW] DHT error:", repr(e), "-> reinit")
-            await self.init_dht()
             return None, None
 
     def fail_safe(self):
@@ -181,10 +160,7 @@ class Hardware:
                 await self.servo_ramp(SERVO_MIN, SERVO_MAX)
                 await self.servo_ramp(SERVO_MAX, SERVO_MIN)
         finally:
-            try:
-                self.set_servo_ns(SERVO_MID)
-            except Exception:
-                pass
+            self.set_servo_ns(SERVO_MID)
 
     async def servo_ramp(self, start, end, seconds=2.5, hz=80):
         steps = max(1, int(seconds * hz))
@@ -228,7 +204,6 @@ async def telemetry_loop(ws, hw: Hardware):
     last_humidity = None
     while True:
         ambient_temp, humidity = await hw.read_dht22()
-        print("[DHT]", ambient_temp, humidity, flush=True)
         if ambient_temp is not None:
             last_temp = round(float(ambient_temp), 1)
         if humidity is not None:
@@ -255,10 +230,7 @@ def apply_command(payload, hw: Hardware):
 async def receiver_loop(ws, hw: Hardware):
     async for raw in ws:
         print("[NET] received:", raw)
-        try:
-            data = json.loads(raw)
-        except Exception:
-            continue
+        data = json.loads(raw)
         if data.get("type") == "command":
             apply_command(data.get("payload") or {}, hw)
 
